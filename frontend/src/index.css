@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* ─── Custom scrollbar for chat area ─── */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ─── Dark chat bubble code blocks ─── */
+.prose-invert pre {
+  position: relative;
+  overflow-x: auto;
+}
+.prose-invert pre code {
+  font-size: 12px;
+  line-height: 1.6;
+  display: block;
+}
+.prose-invert code:not(pre code) {
+  font-size: 12px;
+}
+
+/* ─── Dark chat tables ─── */
+.prose-invert table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+.prose-invert th {
+  background: rgba(30, 41, 59, 0.8);
+  border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+  padding: 8px 12px;
+  text-align: left;
+}
+.prose-invert td {
+  border-bottom: 1px solid rgba(100, 116, 139, 0.15);
+  padding: 6px 12px;
+}
+.prose-invert tr:hover td {
+  background: rgba(100, 116, 139, 0.06);
+}
+
+/* ─── Smooth chat bubble animation ─── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.space-y-6 > * {
+  animation: fadeInUp 0.25s ease-out;
+}

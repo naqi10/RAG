@@ -1,0 +1,59 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+
+# Databases and local app state
+*.db
+*.sqlite
+*.sqlite3
+backend/app/data/
+
+# Uploaded/user files
+backend/uploads/
+backend/app/data/pdfs/
+
+# Vector stores / model artifacts / caches
+backend/app/data/vector_store/
+**/faiss_index/
+**/.cache/
+
+# Logs
+*.log
+logs/
+server_log.txt
+
+# Local notes/scratch
+*.rtf
+commands.txt.txt
+
