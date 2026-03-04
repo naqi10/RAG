@@ -89,46 +89,6 @@ Sheeeen/
 
 ---
 
-## API Highlights
-
-- **Auth**
-  - `POST /auth/login`
-  - `GET /auth/me`
-
-- **Admin**
-  - `GET /admin/users`
-  - `POST /admin/users/invite`
-  - `DELETE /admin/users/{user_id}`
-  - `PATCH /admin/users/{user_id}/activate`
-
-- **Workspaces**
-  - `GET /workspaces/`
-  - `POST /workspaces/`
-  - `PATCH /workspaces/{ws_id}/rename`
-  - `DELETE /workspaces/{ws_id}`
-
-- **Workspace PDFs**
-  - `GET /workspaces/{ws_id}/pdfs`
-  - `POST /workspaces/{ws_id}/upload`
-  - `PATCH /workspaces/{ws_id}/pdfs/{pdf_id}/toggle`
-  - `PATCH /workspaces/{ws_id}/pdfs/{pdf_id}/tags`
-  - `DELETE /workspaces/{ws_id}/pdfs/{pdf_id}`
-
-- **Workspace Conversations**
-  - `GET /workspaces/{ws_id}/conversations`
-  - `POST /workspaces/{ws_id}/conversations`
-
-- **Conversation Ops**
-  - `PATCH /conversations/{convo_id}/rename`
-  - `DELETE /conversations/{convo_id}`
-  - `GET /conversations/{convo_id}/messages`
-  - `GET /conversations/{convo_id}/export?format=json|txt`
-
-- **RAG**
-  - `POST /rag/ask`
-  - `POST /rag/flashcards`
-
----
 
 ## RAG Retrieval Quality Pipeline
 
@@ -191,27 +151,4 @@ Open: `http://localhost:3000`
 
 ---
 
-## Default Admin Login (from .env)
-
-- Email: `admin@pdfchat.com`
-- Password: value of `ADMIN_PASSWORD`
-
----
-
-## Security Notes Before Public Push
-
-- Never commit real `.env` files
-- Rotate any API keys that were exposed in logs/screenshots
-- Use a strong random `JWT_SECRET`
-- Change default admin password immediately in production
-
----
-
-## Roadmap Ideas
-
-- Alembic migrations for schema versioning
-- Qdrant optional vector backend
-- Streaming token responses in chat
-- Role-based permissions beyond admin/user
-- Docker + CI/CD pipeline
 
