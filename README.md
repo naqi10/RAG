@@ -151,4 +151,12 @@ Open: `http://localhost:3000`
 
 ---
 
+## OCR Runtime Note
+
+- Image uploads use OCR (`easyocr`) to extract text from screenshots/A4 pages.
+- First OCR request may be slower because model files are loaded/downloaded.
+- Keep internet available on first run so OCR assets can initialize successfully.
+
+---
+
 
