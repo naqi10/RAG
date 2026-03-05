@@ -4,6 +4,8 @@ import {
   FiClock,
   FiZap,
   FiDownload,
+  FiPlus,
+  FiImage,
   FiFileText,
   FiBookOpen,
   FiCopy,
@@ -14,7 +16,7 @@ import {
 } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { askQuestion, getConversationMessages, exportConversation } from "../api/client";
+import { askQuestion, getConversationMessages, exportConversation, uploadPDFToWorkspace } from "../api/client";
 
 /* ─── branding icon ─── */
 const AiIcon = () => (
@@ -103,15 +105,19 @@ const SUGGESTED_QUESTIONS = [
   { icon: "💡", text: "Explain the most important section" },
 ];
 
-export default function Chat({ conversationId, convoTitle, workspaceId, activePdfIds, pdfs = [] }) {
+export default function Chat({ conversationId, convoTitle, workspaceId, activePdfIds, pdfs = [], onUploadAsset }) {
   const activePdfs = pdfs.filter((p) => p.is_active);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const [uploadingAsset, setUploadingAsset] = useState(false);
+  const [uploadTags, setUploadTags] = useState("");
   const bottomRef = useRef(null);
   const scrollAreaRef = useRef(null);
+  const uploadInputRef = useRef(null);
 
   /* ─── load conversation history ─── */
   useEffect(() => {
@@ -160,6 +166,39 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
   }, []);
 
   const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+
+  const handlePickAsset = () => {
+    uploadInputRef.current?.click();
+  };
+
+  const handleUploadAsset = async (file) => {
+    if (!file || !workspaceId) return;
+    setUploadingAsset(true);
+    try {
+      await uploadPDFToWorkspace(workspaceId, file, uploadTags.trim());
+      setShowUploadMenu(false);
+      setUploadTags("");
+      await onUploadAsset?.(file.name);
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          text: `Uploaded **${file.name}** successfully. You can now ask questions from this file.`,
+          confidence: "High",
+          task_type: "upload",
+          ts: Date.now(),
+        },
+      ]);
+    } catch (err) {
+      const msg = err?.response?.data?.detail || "Upload failed.";
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: msg, error: true, ts: Date.now() },
+      ]);
+    } finally {
+      setUploadingAsset(false);
+    }
+  };
 
   /* ─── send message ─── */
   const send = async (overrideQuery) => {
@@ -279,8 +318,9 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
             </span>
           )}
         </div>
-        {messages.length > 0 && (
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5">
+          {messages.length > 0 && (
+            <>
             <button
               onClick={() => handleExport("json")}
               className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded-lg transition cursor-pointer"
@@ -293,8 +333,9 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
             >
               <FiDownload size={12} /> TXT
             </button>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* ═══ Messages ═══ */}
@@ -441,7 +482,44 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
 
       {/* ═══ Input ═══ */}
       <div className="border-t border-slate-200/60 bg-white/80 backdrop-blur-sm px-4 sm:px-6 py-4">
-        <div className="flex items-end gap-3 max-w-3xl mx-auto">
+        <div className="flex items-end gap-2.5 max-w-3xl mx-auto relative">
+          <div className="relative">
+            <button
+              onClick={() => setShowUploadMenu((v) => !v)}
+              className="w-11 h-11 rounded-2xl border border-slate-200 bg-white text-slate-500 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 transition flex items-center justify-center shadow-sm cursor-pointer"
+              title="Upload PDF / Image"
+            >
+              <FiPlus size={18} />
+            </button>
+            {showUploadMenu && (
+              <div className="absolute left-0 bottom-14 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-30">
+                <button
+                  onClick={handlePickAsset}
+                  disabled={uploadingAsset}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-60 transition"
+                >
+                  <FiImage size={13} />
+                  {uploadingAsset ? "Uploading..." : "Choose PDF / Image"}
+                </button>
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.bmp,.tiff"
+                  className="hidden"
+                  onChange={(e) => handleUploadAsset(e.target.files?.[0])}
+                />
+                <input
+                  value={uploadTags}
+                  onChange={(e) => setUploadTags(e.target.value)}
+                  placeholder="Tags (optional)"
+                  className="mt-2 w-full text-xs px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-emerald-400"
+                />
+                <p className="mt-1 text-[10px] text-slate-400">
+                  Upload directly from chat.
+                </p>
+              </div>
+            )}
+          </div>
           <div className="flex-1 relative">
             <textarea
               rows={1}

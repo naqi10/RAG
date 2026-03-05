@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Sidebar from "./components/Sidebar";
-import UploadPDF from "./components/UploadPDF";
 import Chat from "./components/Chat";
 import Flashcards from "./components/Flashcards";
 import AdminPanel from "./components/AdminPanel";
@@ -80,7 +79,7 @@ function AppContent() {
       await fetchWorkspaces();
       setActiveWsId(data.id);
       setActiveConvoId(null);
-      setTab("upload");
+      setTab("chat");
     } catch (err) { console.error("Failed to create workspace:", err); }
   };
 
@@ -88,7 +87,7 @@ function AppContent() {
     const id = typeof ws === "string" ? ws : ws?.id;
     setActiveWsId(id);
     setActiveConvoId(null);
-    if (tab === "dashboard") setTab("upload");
+    if (tab === "dashboard") setTab("chat");
   };
 
   const handleRenameWs = async (id, title) => {
@@ -124,15 +123,6 @@ function AppContent() {
   const onPdfUploaded = async () => {
     await fetchPdfs(activeWsId);
     fetchWorkspaces();
-    // Auto-create a conversation and navigate to chat
-    if (activeWsId) {
-      try {
-        const data = await createWorkspaceConversation(activeWsId, "New Chat");
-        await fetchConversations(activeWsId);
-        setActiveConvoId(data.id);
-        setTab("chat");
-      } catch {}
-    }
   };
 
   // ── Conversation handlers ──
@@ -236,11 +226,6 @@ function AppContent() {
           </div>
         )}
 
-        {/* Upload page */}
-        {tab === "upload" && activeWsId && (
-          <UploadPDF workspaceId={activeWsId} onUploaded={onPdfUploaded} />
-        )}
-
         {/* Chat */}
         {tab === "chat" && activeWsId && (
           <div className="h-full">
@@ -251,6 +236,7 @@ function AppContent() {
                 workspaceId={activeWsId}
                 activePdfIds={activePdfIds}
                 pdfs={pdfs}
+                onUploadAsset={onPdfUploaded}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-400 select-none">

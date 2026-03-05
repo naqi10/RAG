@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  FiPlus, FiMessageSquare, FiLayers, FiUpload, FiSettings, FiLogOut,
+  FiPlus, FiMessageSquare, FiLayers, FiSettings, FiLogOut,
   FiEdit2, FiTrash2, FiCheck, FiX, FiChevronDown, FiChevronRight,
   FiFile, FiTag, FiHome, FiCheckCircle, FiGitBranch, FiFileText,
   FiUsers, FiCpu, FiClock,
@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   { id: "quiz", label: "Quiz", icon: FiCheckCircle, needsWs: true },
   { id: "mindmap", label: "Mind Map", icon: FiGitBranch, needsWs: true },
   { id: "notes", label: "Notes", icon: FiFileText, needsWs: true },
-  { id: "upload", label: "Upload PDF", icon: FiUpload, needsWs: true },
 ];
 
 export default function Sidebar({
@@ -55,11 +54,11 @@ export default function Sidebar({
   const activePdfs = pdfs.filter((p) => p.is_active);
 
   return (
-    <aside className="w-60 shrink-0 bg-white border-r border-gray-200/60 flex flex-col h-screen">
+    <aside className="w-64 shrink-0 bg-gradient-to-b from-white to-slate-50 border-r border-slate-200/70 flex flex-col h-screen">
       {/* Brand */}
-      <div className="px-4 py-4 border-b border-gray-100">
-        <h1 className="text-base font-bold text-gray-900 tracking-tight flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center">
+      <div className="px-4 py-4 border-b border-slate-200/70">
+        <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-200">
             <FiCpu size={14} className="text-white" />
           </div>
           StudyAI
@@ -71,16 +70,16 @@ export default function Sidebar({
         <div className="relative">
           <button
             onClick={() => setWsDropdownOpen(!wsDropdownOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-gray-300 transition text-sm bg-white"
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200 hover:border-emerald-300 transition text-sm bg-white shadow-sm"
           >
-            <span className="truncate text-gray-700 font-medium">
+            <span className="truncate text-slate-700 font-medium">
               {activeWs ? activeWs.title : "Select workspace..."}
             </span>
             <FiChevronDown size={14} className={`text-gray-400 transition ${wsDropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
           {wsDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
               {workspaces.map((ws) => (
                 <div key={ws.id} className="group flex items-center hover:bg-gray-50">
                   <button
@@ -146,7 +145,7 @@ export default function Sidebar({
 
       {/* Navigation */}
       <div className="px-3 py-2">
-        <p className="text-[10px] uppercase tracking-widest text-gray-400 px-2 mb-1.5 font-semibold">Features</p>
+        <p className="text-[10px] uppercase tracking-widest text-slate-400 px-2 mb-1.5 font-semibold">Workspace Tools</p>
         <nav className="space-y-0.5">
           {NAV_ITEMS.map(({ id, label, icon: Icon, needsWs }) => {
             const isActive = active === id;
@@ -158,10 +157,10 @@ export default function Sidebar({
                 disabled={isDisabled}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
                   isActive
-                    ? "bg-emerald-50 text-emerald-700"
+                    ? "bg-emerald-100/70 text-emerald-800 border border-emerald-200/80"
                     : isDisabled
                     ? "text-gray-300 cursor-not-allowed"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                    : "text-slate-600 hover:bg-white hover:text-slate-800"
                 }`}
               >
                 <Icon size={15} className={isActive ? "text-emerald-600" : ""} />
@@ -174,25 +173,16 @@ export default function Sidebar({
 
       {/* Workspace Content (PDFs + Chats) */}
       {activeWsId && (
-        <div className="flex-1 overflow-y-auto px-3 pb-2 border-t border-gray-100 mt-1 pt-2">
+        <div className="flex-1 overflow-y-auto px-3 pb-2 border-t border-slate-200/70 mt-1 pt-2">
           {/* PDFs Section */}
           <button
             onClick={() => setShowPdfs(!showPdfs)}
-            className="w-full flex items-center justify-between px-2 py-1 mb-1"
+            className="w-full flex items-center justify-between px-2 py-1.5 mb-1 rounded-lg hover:bg-white/70"
           >
-            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold flex items-center gap-1">
+            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold flex items-center gap-1">
               <FiFile size={9} /> Documents ({pdfs.length})
             </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={(e) => { e.stopPropagation(); onSelect("upload"); }}
-                className="text-emerald-500 hover:text-emerald-700"
-                title="Upload PDF/Image"
-              >
-                <FiPlus size={10} />
-              </button>
-              {showPdfs ? <FiChevronDown size={10} className="text-gray-400" /> : <FiChevronRight size={10} className="text-gray-400" />}
-            </div>
+            {showPdfs ? <FiChevronDown size={10} className="text-gray-400" /> : <FiChevronRight size={10} className="text-gray-400" />}
           </button>
 
           {showPdfs && (
@@ -239,9 +229,9 @@ export default function Sidebar({
           {/* Conversations Section */}
           <button
             onClick={() => setShowChats(!showChats)}
-            className="w-full flex items-center justify-between px-2 py-1 mb-1"
+            className="w-full flex items-center justify-between px-2 py-1.5 mb-1 rounded-lg hover:bg-white/70"
           >
-            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold flex items-center gap-1">
+            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold flex items-center gap-1">
               <FiMessageSquare size={9} /> Chats ({conversations.length})
             </span>
             <div className="flex items-center gap-1">
@@ -306,7 +296,7 @@ export default function Sidebar({
       {!activeWsId && <div className="flex-1" />}
 
       {/* Footer */}
-      <div className="border-t border-gray-100 px-3 py-2 space-y-0.5">
+      <div className="border-t border-slate-200/70 px-3 py-2 space-y-0.5 bg-white/60 backdrop-blur-sm">
         <button
           onClick={() => onSelect("settings")}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition ${
