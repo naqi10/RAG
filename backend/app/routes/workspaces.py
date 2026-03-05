@@ -13,12 +13,14 @@ from ..auth import get_current_user
 from ..utils.helpers import save_upload_file
 from ..services.loader import process_and_index
 from ..services.vectordb import vectorstore
+from ..services.ocr import extract_text_from_image
 from ..utils.config import PDF_DIR
 from ..utils.logger import logger
 
 from langchain_community.document_loaders import PyMuPDFLoader, PDFPlumberLoader
 
 router = APIRouter()
+SUPPORTED_UPLOAD_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}
 
 
 # ── Request models ──
@@ -132,8 +134,12 @@ async def upload_pdf_to_workspace(
 ):
     ws = _get_workspace(ws_id, user, db)
 
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    _, ext = os.path.splitext(file.filename.lower())
+    if ext not in SUPPORTED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail="Supported files: PDF, PNG, JPG, JPEG, WEBP, BMP, TIFF.",
+        )
 
     dest = os.path.join(PDF_DIR, file.filename)
     await save_upload_file(file, dest)
@@ -157,23 +163,31 @@ async def upload_pdf_to_workspace(
     db.refresh(pdf_record)
 
     try:
-        # Load PDF
-        try:
-            loader = PyMuPDFLoader(dest)
-            documents = loader.load()
-        except Exception as e:
-            logger.warning(f"PyMuPDF failed: {e}. Falling back.")
-            loader = PDFPlumberLoader(dest)
-            documents = loader.load()
-
-        # Preprocess
         cleaned_docs = []
-        for doc in documents:
-            text = doc.page_content
-            text = " ".join(text.split())
-            text = text.replace("###", "\n\n### ").replace("```", "\n```")
-            text = text.replace("Table", "\nTable").replace("Figure", "\nFigure")
-            cleaned_docs.append({"page_content": text, "metadata": doc.metadata})
+        if ext == ".pdf":
+            try:
+                loader = PyMuPDFLoader(dest)
+                documents = loader.load()
+            except Exception as e:
+                logger.warning(f"PyMuPDF failed: {e}. Falling back.")
+                loader = PDFPlumberLoader(dest)
+                documents = loader.load()
+
+            for doc in documents:
+                text = doc.page_content
+                text = " ".join(text.split())
+                text = text.replace("###", "\n\n### ").replace("```", "\n```")
+                text = text.replace("Table", "\nTable").replace("Figure", "\nFigure")
+                cleaned_docs.append({"page_content": text, "metadata": doc.metadata})
+        else:
+            # OCR flow for image documents
+            text = extract_text_from_image(dest)
+            cleaned_docs.append(
+                {
+                    "page_content": text,
+                    "metadata": {"page": 1, "filename": file.filename, "file_type": "image"},
+                }
+            )
 
         # Index chunks with workspace_id and pdf_id in metadata
         added_chunks = process_and_index(
@@ -188,7 +202,7 @@ async def upload_pdf_to_workspace(
         db.commit()
 
         return JSONResponse({
-            "message": f"{file.filename} added to workspace!",
+            "message": f"{file.filename} added to workspace and indexed!",
             "pdf_id": pdf_record.id,
             "chunks_added": added_chunks,
             "pages": len(cleaned_docs),

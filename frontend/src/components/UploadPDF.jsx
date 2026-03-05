@@ -2,6 +2,8 @@ import { useCallback, useState } from "react";
 import { FiUploadCloud, FiCheckCircle, FiAlertCircle, FiTag } from "react-icons/fi";
 import { uploadPDFToWorkspace } from "../api/client";
 
+const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"];
+
 export default function UploadPDF({ workspaceId, onUploaded }) {
   const [dragging, setDragging] = useState(false);
   const [status, setStatus] = useState("idle");
@@ -11,9 +13,11 @@ export default function UploadPDF({ workspaceId, onUploaded }) {
 
   const handleFile = useCallback(
     async (file) => {
-      if (!file || !file.name.toLowerCase().endsWith(".pdf")) {
+      const name = file?.name?.toLowerCase?.() || "";
+      const valid = ACCEPTED_EXTENSIONS.some((ext) => name.endsWith(ext));
+      if (!file || !valid) {
         setStatus("error");
-        setErrMsg("Please select a PDF file.");
+        setErrMsg("Please select PDF or image (png/jpg/jpeg/webp/bmp/tiff).");
         return;
       }
       if (!workspaceId) {
@@ -72,10 +76,15 @@ export default function UploadPDF({ workspaceId, onUploaded }) {
           <>
             <FiUploadCloud className="mx-auto text-gray-300" size={40} />
             <p className="mt-4 text-sm text-gray-500">
-              Drag & drop a PDF here, or{" "}
+              Drag & drop a PDF or image here, or{" "}
               <label className="text-emerald-600 font-medium cursor-pointer hover:underline">
                 browse
-                <input type="file" accept=".pdf" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.bmp,.tiff"
+                  className="hidden"
+                  onChange={(e) => handleFile(e.target.files?.[0])}
+                />
               </label>
             </p>
             <div className="mt-4 flex items-center gap-2 w-full max-w-xs mx-auto">
@@ -87,7 +96,9 @@ export default function UploadPDF({ workspaceId, onUploaded }) {
                 className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200 outline-none focus:border-emerald-400"
               />
             </div>
-            <p className="mt-2 text-[10px] text-gray-300">Multiple PDFs per workspace supported</p>
+            <p className="mt-2 text-[10px] text-gray-300">
+              Multiple PDFs/images per workspace supported (OCR for image text extraction)
+            </p>
             {status === "error" && (
               <div className="mt-4 flex items-center gap-2 text-xs text-red-500 justify-center">
                 <FiAlertCircle size={14} /> {errMsg}

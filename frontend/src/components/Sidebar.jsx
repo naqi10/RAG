@@ -3,13 +3,14 @@ import {
   FiPlus, FiMessageSquare, FiLayers, FiUpload, FiSettings, FiLogOut,
   FiEdit2, FiTrash2, FiCheck, FiX, FiChevronDown, FiChevronRight,
   FiFile, FiTag, FiHome, FiCheckCircle, FiGitBranch, FiFileText,
-  FiUsers, FiCpu,
+  FiUsers, FiCpu, FiClock,
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: FiHome, needsWs: false },
   { id: "chat", label: "AI Chat", icon: FiMessageSquare, needsWs: true },
+  { id: "history", label: "History", icon: FiClock, needsWs: true },
   { id: "flashcards", label: "Flashcards", icon: FiLayers, needsWs: true },
   { id: "quiz", label: "Quiz", icon: FiCheckCircle, needsWs: true },
   { id: "mindmap", label: "Mind Map", icon: FiGitBranch, needsWs: true },
@@ -182,7 +183,16 @@ export default function Sidebar({
             <span className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold flex items-center gap-1">
               <FiFile size={9} /> Documents ({pdfs.length})
             </span>
-            {showPdfs ? <FiChevronDown size={10} className="text-gray-400" /> : <FiChevronRight size={10} className="text-gray-400" />}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); onSelect("upload"); }}
+                className="text-emerald-500 hover:text-emerald-700"
+                title="Upload PDF/Image"
+              >
+                <FiPlus size={10} />
+              </button>
+              {showPdfs ? <FiChevronDown size={10} className="text-gray-400" /> : <FiChevronRight size={10} className="text-gray-400" />}
+            </div>
           </button>
 
           {showPdfs && (

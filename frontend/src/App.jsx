@@ -11,6 +11,7 @@ import QuizGenerator from "./components/QuizGenerator";
 import PDFNotes from "./components/PDFNotes";
 import MindMap from "./components/MindMap";
 import Settings from "./components/Settings";
+import History from "./components/History";
 import {
   getWorkspaces, createWorkspace, renameWorkspace, deleteWorkspace,
   getWorkspacePDFs, togglePDF, removePDF,
@@ -266,6 +267,18 @@ function AppContent() {
               </div>
             )}
           </div>
+        )}
+
+        {/* History */}
+        {tab === "history" && activeWsId && (
+          <History
+            conversations={conversations}
+            activeConvoId={activeConvoId}
+            onOpenChat={(id) => {
+              setActiveConvoId(id);
+              setTab("chat");
+            }}
+          />
         )}
 
         {/* Flashcards */}

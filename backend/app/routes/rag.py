@@ -5,7 +5,6 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import PromptTemplate
 
@@ -25,10 +24,11 @@ from ..services.prompt import (
 from ..utils.logger import logger
 
 # ── Reranker config ──
-RETRIEVER_K = 6    # fetch this many from FAISS (lower = faster)
+RETRIEVER_K = 10   # fetch this many from FAISS
 RERANK_TOP_N = 3   # keep this many after cross-encoder reranking
+FALLBACK_DOC_POOL = 40  # metadata-only fallback pool size (strictly selected PDFs/workspace)
 from ..database import get_db
-from ..models import User, Conversation, Message, Workspace, WorkspacePDF
+from ..models import User, Conversation, Message, WorkspacePDF
 from ..auth import get_current_user
 
 router = APIRouter()
@@ -75,20 +75,6 @@ def _get_active_pdf_ids(workspace_id: str, explicit_ids: Optional[List[str]], db
     return [p.id for p in active_pdfs]
 
 
-def _get_active_pdf_filenames(workspace_id: str, explicit_ids: Optional[List[str]], db: Session) -> List[str]:
-    """Get filenames of active PDFs for filename-based fallback filtering."""
-    if explicit_ids:
-        pdfs = db.query(WorkspacePDF).filter(WorkspacePDF.id.in_(explicit_ids)).all()
-    elif workspace_id:
-        pdfs = db.query(WorkspacePDF).filter(
-            WorkspacePDF.workspace_id == workspace_id,
-            WorkspacePDF.is_active.is_(True),
-        ).all()
-    else:
-        return []
-    return [p.filename for p in pdfs if p.filename]
-
-
 def _load_history_from_db(convo_id: str, db: Session) -> List[Message]:
     """Load all messages for a conversation from DB."""
     return (
@@ -119,30 +105,6 @@ def _save_message(db: Session, convo_id: str, role: str, text: str, meta: dict =
     )
     db.add(msg)
     db.commit()
-
-
-def _filter_docs_by_active_pdfs(docs: List[Any], active_pdf_ids: List[str]) -> List[Any]:
-    """Filter retrieved docs to only those belonging to active PDFs in the workspace."""
-    if not active_pdf_ids:
-        return docs
-    filtered = []
-    for d in docs:
-        md = getattr(d, "metadata", {}) or {}
-        if md.get("pdf_id") in active_pdf_ids or md.get("workspace_id") and not md.get("pdf_id"):
-            filtered.append(d)
-    return filtered
-
-
-def _filter_docs_by_workspace(docs: List[Any], workspace_id: Optional[str]) -> List[Any]:
-    """Fallback: filter by workspace_id if no pdf_id-level filtering."""
-    if not workspace_id:
-        return docs
-    filtered = []
-    for d in docs:
-        md = getattr(d, "metadata", {}) or {}
-        if md.get("workspace_id") == workspace_id or md.get("session_id") == workspace_id:
-            filtered.append(d)
-    return filtered
 
 
 def _resolve_page(metadata: Dict[str, Any]) -> Optional[int]:
@@ -295,8 +257,6 @@ def generate_flashcards_endpoint(
         _verify_conversation(convo_id, user, db)
 
     n_cards = req.n_cards if req.n_cards and req.n_cards > 0 else 10
-    retriever = vectorstore.as_retriever()
-    retriever.search_kwargs["k"] = RETRIEVER_K
     llm = get_llm()
 
     # Load history from DB
@@ -314,17 +274,18 @@ def generate_flashcards_endpoint(
     # Get active PDFs for workspace-scoped filtering
     active_pdf_ids = _get_active_pdf_ids(req.workspace_id, req.active_pdf_ids, db) if req.workspace_id else []
 
-    # Filtered retrieval with fallback chain:
-    # 1. pdf_id → 2. workspace_id → 3. filename (legacy uploads)
+    # Strict filtered retrieval:
+    # 1) active pdf_ids (preferred)  2) workspace_id fallback
     docs = []
     if active_pdf_ids:
         docs = vectorstore.search_with_filter(req.query, k=RETRIEVER_K, filter_dict={"pdf_id": active_pdf_ids})
-    if not docs and req.workspace_id:
+        if not docs:
+            # Generic prompts may fail semantic filter; fallback to selected PDFs only.
+            docs = vectorstore.get_docs_by_metadata({"pdf_id": active_pdf_ids}, k=FALLBACK_DOC_POOL)
+    elif req.workspace_id:
         docs = vectorstore.search_with_filter(req.query, k=RETRIEVER_K, filter_dict={"workspace_id": req.workspace_id})
-    if not docs:
-        filenames = _get_active_pdf_filenames(req.workspace_id, req.active_pdf_ids, db)
-        if filenames:
-            docs = vectorstore.search_with_filter(req.query, k=RETRIEVER_K, filter_dict={"filename": filenames})
+        if not docs:
+            docs = vectorstore.get_docs_by_metadata({"workspace_id": req.workspace_id}, k=FALLBACK_DOC_POOL)
     if not docs:
         raise HTTPException(status_code=404, detail="No relevant content found in your active documents.")
 
@@ -346,7 +307,6 @@ def generate_flashcards_endpoint(
     flashcard_prompt = _prepare_flashcard_prompt_template()
     try:
         combine_docs_chain = create_stuff_documents_chain(llm=llm, prompt=flashcard_prompt, document_variable_name="context")
-        qa_chain = create_retrieval_chain(retriever=retriever, combine_docs_chain=combine_docs_chain)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to build flashcard chain: {exc}")
 
@@ -354,18 +314,16 @@ def generate_flashcards_endpoint(
         "input": req.query,
         "chat_history": chat_history_text,
         "n_cards": str(n_cards),
-        "context": "\n".join([c["text"] for c in chunks]),
-        "source": ", ".join([c["source"] for c in chunks]),
-        "page": ", ".join([str(c["page"]) for c in chunks]),
+        "context": used_docs,  # pass strictly filtered+reranked docs
         "system_instructions": SYSTEM_INSTRUCTIONS,
     }
 
     try:
-        result = qa_chain.invoke(invoke_payload)
+        result = combine_docs_chain.invoke(invoke_payload)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Flashcard generation failed: {exc}")
 
-    raw_answer = result.get("answer") if isinstance(result, dict) else str(result)
+    raw_answer = result if isinstance(result, str) else str(result)
 
     try:
         flashcards = _parse_flashcards_output(raw_answer)
@@ -424,8 +382,6 @@ def ask(
     if convo_id:
         _verify_conversation(convo_id, user, db)
 
-    retriever = vectorstore.as_retriever()
-    retriever.search_kwargs["k"] = RETRIEVER_K
     llm = get_llm()
     max_lines = 0
 
@@ -444,22 +400,19 @@ def ask(
     # Get active PDFs for workspace-scoped filtering
     active_pdf_ids = _get_active_pdf_ids(req.workspace_id, req.active_pdf_ids, db) if req.workspace_id else []
 
-    # Filtered retrieval with fallback chain:
-    # 1. Try pdf_id (workspace uploads with metadata)
-    # 2. Try workspace_id (workspace-tagged chunks)
-    # 3. Try filename (matches ALL copies including legacy uploads)
-    # 4. Direct metadata lookup (for meta questions with no semantic match)
-    filenames = _get_active_pdf_filenames(req.workspace_id, req.active_pdf_ids, db)
+    # Strict filtered retrieval:
+    # 1) active pdf_ids (preferred)  2) workspace_id fallback
     docs = []
     if active_pdf_ids:
         docs = vectorstore.search_with_filter(req.query, k=RETRIEVER_K, filter_dict={"pdf_id": active_pdf_ids})
-    if not docs and req.workspace_id:
+        if not docs:
+            # Generic prompts (e.g., "key concepts") can miss in semantic stage.
+            # Pull only selected-PDF chunks, then rerank.
+            docs = vectorstore.get_docs_by_metadata({"pdf_id": active_pdf_ids}, k=FALLBACK_DOC_POOL)
+    elif req.workspace_id:
         docs = vectorstore.search_with_filter(req.query, k=RETRIEVER_K, filter_dict={"workspace_id": req.workspace_id})
-    if not docs and filenames:
-        docs = vectorstore.search_with_filter(req.query, k=RETRIEVER_K, filter_dict={"filename": filenames})
-    if not docs and filenames:
-        # Last resort: grab some chunks directly by metadata (handles meta/conversational questions)
-        docs = vectorstore.get_docs_by_metadata({"filename": filenames}, k=RETRIEVER_K)
+        if not docs:
+            docs = vectorstore.get_docs_by_metadata({"workspace_id": req.workspace_id}, k=FALLBACK_DOC_POOL)
     if not docs:
         return {"answer": "No relevant content found in your active documents. Make sure PDFs are uploaded and active in the sidebar.", "sources": []}
 
@@ -478,7 +431,7 @@ def ask(
     try:
         task_type = detect_intent(req.query)
         if task_type == "summary":
-            prompt = build_summarize_prompt(chunks, formatted_history, style="academic")
+            prompt = build_summarize_prompt(chunks, formatted_history, style="friendly, simple, and clear")
         elif task_type == "flashcards":
             prompt = build_flashcard_prompt(chunks, formatted_history, n_cards=10)
         elif task_type == "exam":
@@ -488,7 +441,7 @@ def ask(
         else:
             match = re.search(r"in (\d+)\s*lines", req.query.lower())
             max_lines = int(match.group(1)) if match else 0
-            prompt = build_qa_prompt(req.query, chunks, formatted_history, style="academic", max_lines=max_lines)
+            prompt = build_qa_prompt(req.query, chunks, formatted_history, style="friendly, simple, and clear", max_lines=max_lines)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prompt generation failed: {e}")
 
@@ -506,7 +459,6 @@ def ask(
 
     try:
         combine_docs_chain = create_stuff_documents_chain(llm=llm, prompt=prompt, document_variable_name="context")
-        qa = create_retrieval_chain(retriever=retriever, combine_docs_chain=combine_docs_chain)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to build retrieval chain: {e}")
 
@@ -515,29 +467,23 @@ def ask(
         "chat_history": formatted_history,
         "max_lines": max_lines,
         "system_instructions": SYSTEM_INSTRUCTIONS,
-        "style": "academic",
+        "style": "friendly, simple, and clear",
+        "context": used_docs,  # pass strictly filtered+reranked docs
     }
 
     try:
-        result = qa.invoke(invoke_inputs)
+        result = combine_docs_chain.invoke(invoke_inputs)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chain invocation failed: {e}")
 
-    answer = None
-    if isinstance(result, dict):
-        answer = result.get("answer") or result.get("result") or result.get("output")
-    elif isinstance(result, str):
-        answer = result
-    answer = answer or "No answer generated."
+    answer = result.strip() if isinstance(result, str) else str(result)
+    if not answer:
+        answer = "No answer generated."
 
+    # Sources now come directly from the filtered docs we passed into LLM
     source_docs = []
-    raw_sources = result.get("source_documents") or result.get("context") or result.get("sources") or []
-    for item in raw_sources:
-        md = getattr(item, "metadata", None)
-        if md is None and isinstance(item, dict):
-            md = item.get("metadata", {}) or {}
-        if md is None:
-            md = {}
+    for d in used_docs:
+        md = getattr(d, "metadata", {}) or {}
         source_docs.append({"source": md.get("source", "unknown"), "page": _resolve_page(md)})
 
     # Post-process sources & confidence
