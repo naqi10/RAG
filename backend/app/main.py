@@ -9,7 +9,7 @@ from .database import engine, SessionLocal, Base
 from .models import User
 from .auth import hash_password
 from .services.memory import memory
-from .utils.config import ADMIN_EMAIL, ADMIN_PASSWORD, SESSION_TTL_HOURS
+from .utils.config import ADMIN_EMAIL, ADMIN_PASSWORD, SESSION_TTL_HOURS, DEV_SYNC_ADMIN
 from .utils.logger import logger
 
 load_dotenv()
@@ -60,14 +60,16 @@ def seed_admin():
             db.add(admin_user)
             db.commit()
             logger.info(f"Admin user created: {ADMIN_EMAIL}")
-        else:
-            # Keep local/dev auth deterministic: env password always works.
+        elif DEV_SYNC_ADMIN:
+            # Keep local/dev auth deterministic only when explicitly enabled.
             admin_user.password_hash = hash_password(ADMIN_PASSWORD)
             admin_user.role = "admin"
             if not admin_user.display_name:
                 admin_user.display_name = "Admin"
             db.commit()
             logger.info(f"Admin user synced from .env: {ADMIN_EMAIL}")
+        else:
+            logger.info("Admin user exists. Skipping password sync (DEV_SYNC_ADMIN=false).")
     finally:
         db.close()
 

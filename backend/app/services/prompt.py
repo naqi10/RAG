@@ -49,6 +49,7 @@ ACCURACY RULES (non-negotiable):
 3. Be precise. If the document says something specific, quote or paraphrase accurately.
 4. Explain step-by-step when the topic is complex.
 5. Always end with: Sources Referenced (bullet list) and Confidence: High/Medium/Low.
+6. Never return one large paragraph; always structure the answer with headings and bullets.
 
 TONE & STYLE:
 - Be natural and conversational — like a knowledgeable friend helping with studies, not a robot.
@@ -133,6 +134,7 @@ IMPORTANT RULES:
 4. Answer using ONLY the document excerpts above. Do not make up information.
 5. Cite sources: (Source: filename, page X).
 6. End with: Sources Referenced (bullet list) and Confidence: High/Medium/Low.
+7. Never return a single large paragraph. Always use sections + bullets.
 
 Your response:
 """

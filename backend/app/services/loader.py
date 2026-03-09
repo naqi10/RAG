@@ -15,6 +15,7 @@ def process_and_index(
     session_id: Optional[str] = None,
     workspace_id: Optional[str] = None,
     pdf_id: Optional[str] = None,
+    original_filename: Optional[str] = None,
 ):
     """
     Load, chunk, and index PDF data into the vectorstore.
@@ -33,6 +34,7 @@ def process_and_index(
     try:
         logger.info(f"Starting PDF processing: {os.path.basename(file_path)}")
         base_name = os.path.basename(file_path)
+        display_name = original_filename or base_name
 
         if documents is None:
             logger.info("No preprocessed docs provided. Using fallback PDF loader.")
@@ -64,7 +66,7 @@ def process_and_index(
 
                 meta.update({
                     "source": file_path,
-                    "filename": base_name,
+                    "filename": display_name,
                     "page": human_page,
                 })
                 if session_id:

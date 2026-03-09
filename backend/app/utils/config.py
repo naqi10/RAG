@@ -31,8 +31,28 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_DAYS = int(os.getenv("JWT_EXPIRY_DAYS", "7"))
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@pdfchat.com")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+DEV_SYNC_ADMIN = os.getenv("DEV_SYNC_ADMIN", "false").lower() in {"1", "true", "yes", "on"}
 MAX_USERS = int(os.getenv("MAX_USERS", "5"))
 SESSION_TTL_HOURS = int(os.getenv("SESSION_TTL_HOURS", "72"))
+
+# Upload / OCR safety limits
+MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "25"))
+MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+MAX_IMAGE_WIDTH = int(os.getenv("MAX_IMAGE_WIDTH", "5000"))
+MAX_IMAGE_HEIGHT = int(os.getenv("MAX_IMAGE_HEIGHT", "7000"))
+OCR_TIMEOUT_SECONDS = int(os.getenv("OCR_TIMEOUT_SECONDS", "25"))
+
+# Email invite settings
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
+BREVO_SENDER_NAME = os.getenv("BREVO_SENDER_NAME", "StudyAI")
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+# Accept legacy alias EMAIL_FROM for convenience.
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL") or os.getenv("EMAIL_FROM") or SMTP_USER or ""
+SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes", "on"}
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:3000")
 
 # ensure directories exist
 os.makedirs(PDF_DIR, exist_ok=True)

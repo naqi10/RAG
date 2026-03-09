@@ -30,7 +30,7 @@ export const getMe = () => api.get("/auth/me").then(r => r.data);
 
 // ── Admin ──
 export const getUsers = () => api.get("/admin/users").then(r => r.data);
-export const inviteUser = (email, password, displayName) => api.post("/admin/users/invite", { email, password, display_name: displayName }).then(r => r.data);
+export const inviteUser = (email, displayName) => api.post("/admin/users/invite", { email, display_name: displayName }).then(r => r.data);
 export const deactivateUser = (id) => api.delete(`/admin/users/${id}`).then(r => r.data);
 export const activateUser = (id) => api.patch(`/admin/users/${id}/activate`).then(r => r.data);
 

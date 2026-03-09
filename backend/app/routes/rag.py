@@ -240,6 +240,69 @@ def _assign_sources_to_flashcards(flashcards: list, chunks: list) -> list:
     return flashcards
 
 
+def _strip_tail_sections(text: str) -> str:
+    cleaned = re.sub(r"(?is)\n+sources\s+referenced:.*$", "", text).strip()
+    cleaned = re.sub(r"(?is)\n+confidence:\s*(high|medium|low).*$", "", cleaned).strip()
+    return cleaned
+
+
+def _is_process_question(query: str) -> bool:
+    q = query.lower()
+    process_keywords = ("how to", "steps", "process", "procedure", "workflow", "implement", "configure")
+    return any(k in q for k in process_keywords)
+
+
+def _extract_sentences(text: str) -> List[str]:
+    parts = re.split(r"(?<=[.!?])\s+", text.strip())
+    return [p.strip(" -\n\t") for p in parts if p and p.strip()]
+
+
+def _looks_structured(text: str) -> bool:
+    has_heading = bool(re.search(r"(?m)^##\s+", text))
+    has_bullets = bool(re.search(r"(?m)^-\s+", text))
+    has_numbers = bool(re.search(r"(?m)^\d+\.\s+", text))
+    return has_heading and (has_bullets or has_numbers)
+
+
+def _to_structured_answer(
+    answer: str,
+    query: str,
+    text_sources: List[str],
+    confidence: str,
+) -> str:
+    raw = _strip_tail_sections(answer)
+    sentences = _extract_sentences(raw)
+    short_answer = sentences[0] if sentences else (raw or "No answer generated.")
+
+    key_points = sentences[:7] if sentences else [short_answer]
+    if len(key_points) < 3 and len(sentences) >= 1:
+        key_points = (sentences + [short_answer])[:3]
+
+    lines = [
+        "## Short Answer",
+        short_answer,
+        "",
+        "## Key Points",
+    ]
+    for kp in key_points[:7]:
+        lines.append(f"- {kp}")
+
+    if _is_process_question(query):
+        lines.extend(["", "## Steps / Numbered Explanation"])
+        for idx, step in enumerate(key_points[:5], start=1):
+            lines.append(f"{idx}. {step}")
+
+    lines.extend(["", "## Sources"])
+    if text_sources:
+        for src in text_sources:
+            lines.append(f"- {src}")
+    else:
+        lines.append("- None")
+
+    lines.extend(["", f"Confidence: {confidence}"])
+    return "\n".join(lines).strip()
+
+
 # ═══════════════════════════════════════════
 #  FLASHCARDS ENDPOINT
 # ═══════════════════════════════════════════
@@ -501,17 +564,12 @@ def ask(
         return s
 
     text_sources = _fmt_sources(source_docs)
-    if "Sources Referenced: None" in answer and text_sources:
-        answer = answer.replace("Sources Referenced: None", "Sources Referenced:\n\n" + "\n".join(f"- {x}" for x in text_sources))
-    if "Sources Referenced:" not in answer:
-        answer += "\n\nSources Referenced:\n\n" + ("\n".join(f"- {x}" for x in text_sources) if text_sources else "- None")
-
-    if "Confidence:" not in answer:
-        answer += "\n\nConfidence: Medium"
-        confidence = "Medium"
-    else:
-        m = re.search(r"Confidence:\s*(High|Medium|Low)", answer, re.IGNORECASE)
-        confidence = m.group(1).capitalize() if m else "Medium"
+    m = re.search(r"Confidence:\s*(High|Medium|Low)", answer, re.IGNORECASE)
+    confidence = m.group(1).capitalize() if m else "Medium"
+    answer = _to_structured_answer(answer, req.query, text_sources, confidence)
+    # Enforce contract strictly. If model returned plain paragraph, formatter guarantees headings/bullets.
+    if not _looks_structured(answer):
+        answer = _to_structured_answer("No answer generated.", req.query, text_sources, confidence)
 
     # Save to DB and memory
     if convo_id:

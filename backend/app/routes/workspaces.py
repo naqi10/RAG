@@ -1,11 +1,13 @@
 import os
 import traceback
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
+from PIL import Image, UnidentifiedImageError
 
 from ..database import get_db
 from ..models import User, Workspace, WorkspacePDF, Conversation
@@ -14,13 +16,26 @@ from ..utils.helpers import save_upload_file
 from ..services.loader import process_and_index
 from ..services.vectordb import vectorstore
 from ..services.ocr import extract_text_from_image
-from ..utils.config import PDF_DIR
+from ..utils.config import (
+    PDF_DIR,
+    MAX_UPLOAD_BYTES,
+    MAX_IMAGE_WIDTH,
+    MAX_IMAGE_HEIGHT,
+)
 from ..utils.logger import logger
 
 from langchain_community.document_loaders import PyMuPDFLoader, PDFPlumberLoader
 
 router = APIRouter()
 SUPPORTED_UPLOAD_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}
+SUPPORTED_MIME_TYPES = {
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/bmp",
+    "image/tiff",
+}
 
 
 # ── Request models ──
@@ -42,6 +57,43 @@ def _get_workspace(ws_id: str, user: User, db: Session) -> Workspace:
     if not ws:
         raise HTTPException(status_code=404, detail="Workspace not found.")
     return ws
+
+
+def _uuid_storage_filename(ext: str) -> str:
+    return f"{uuid.uuid4().hex}{ext}"
+
+
+def _validate_upload_mime(file: UploadFile, ext: str):
+    content_type = (file.content_type or "").lower().strip()
+    if content_type and content_type not in SUPPORTED_MIME_TYPES:
+        raise HTTPException(status_code=400, detail=f"Unsupported MIME type: {content_type}")
+    if ext == ".pdf" and content_type and content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File extension and MIME type mismatch for PDF.")
+    if ext != ".pdf" and content_type and not content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File extension and MIME type mismatch for image upload.")
+
+
+def _validate_image_dimensions(path: str):
+    try:
+        with Image.open(path) as img:
+            width, height = img.size
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Uploaded image is unreadable or corrupted.")
+    if width > MAX_IMAGE_WIDTH or height > MAX_IMAGE_HEIGHT:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Image dimensions exceed limits. "
+                f"Max {MAX_IMAGE_WIDTH}x{MAX_IMAGE_HEIGHT}, got {width}x{height}."
+            ),
+        )
+
+
+def _validate_pdf_signature(path: str):
+    with open(path, "rb") as f:
+        signature = f.read(5)
+    if signature != b"%PDF-":
+        raise HTTPException(status_code=400, detail="Invalid PDF file signature.")
 
 
 # ═══════════════════════════════════════════
@@ -88,13 +140,13 @@ def delete_workspace(ws_id: str, user: User = Depends(get_current_user), db: Ses
     # Clean up FAISS vectors for all PDFs in this workspace
     vectorstore.delete_by_metadata({"workspace_id": ws_id})
     for pdf in ws.pdfs:
-        vectorstore.delete_by_metadata({"filename": pdf.filename})
-        file_path = os.path.join(PDF_DIR, pdf.filename)
+        vectorstore.delete_by_metadata({"pdf_id": pdf.id})
+        file_path = pdf.file_path
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
             except OSError:
-                pass
+                logger.warning(f"Could not delete file: {file_path}")
     db.delete(ws)
     db.commit()
     return {"message": "Workspace deleted."}
@@ -134,15 +186,42 @@ async def upload_pdf_to_workspace(
 ):
     ws = _get_workspace(ws_id, user, db)
 
-    _, ext = os.path.splitext(file.filename.lower())
+    original_filename = os.path.basename(file.filename or "").strip() or "uploaded_file"
+    _, ext = os.path.splitext(original_filename.lower())
     if ext not in SUPPORTED_UPLOAD_EXTENSIONS:
         raise HTTPException(
             status_code=400,
             detail="Supported files: PDF, PNG, JPG, JPEG, WEBP, BMP, TIFF.",
         )
+    _validate_upload_mime(file, ext)
 
-    dest = os.path.join(PDF_DIR, file.filename)
-    await save_upload_file(file, dest)
+    storage_name = _uuid_storage_filename(ext)
+    dest = os.path.join(PDF_DIR, storage_name)
+    try:
+        await save_upload_file(file, dest, max_bytes=MAX_UPLOAD_BYTES)
+    except ValueError:
+        raise HTTPException(status_code=413, detail=f"File too large. Max allowed is {MAX_UPLOAD_BYTES // (1024 * 1024)}MB.")
+
+    if ext == ".pdf":
+        try:
+            _validate_pdf_signature(dest)
+        except HTTPException:
+            if os.path.exists(dest):
+                try:
+                    os.remove(dest)
+                except OSError:
+                    logger.warning(f"Could not delete invalid PDF file: {dest}")
+            raise
+    else:
+        try:
+            _validate_image_dimensions(dest)
+        except HTTPException:
+            if os.path.exists(dest):
+                try:
+                    os.remove(dest)
+                except OSError:
+                    logger.warning(f"Could not delete invalid image file: {dest}")
+            raise
 
     # Deactivate all existing PDFs in this workspace so only the new one is active
     db.query(WorkspacePDF).filter(
@@ -153,8 +232,8 @@ async def upload_pdf_to_workspace(
     # Create PDF record first to get the ID (is_active defaults to True)
     pdf_record = WorkspacePDF(
         workspace_id=ws.id,
-        filename=file.filename,
-        display_name=display_name or file.filename,
+        filename=original_filename,
+        display_name=display_name or original_filename,
         file_path=dest,
         tags=tags,
     )
@@ -185,7 +264,7 @@ async def upload_pdf_to_workspace(
             cleaned_docs.append(
                 {
                     "page_content": text,
-                    "metadata": {"page": 1, "filename": file.filename, "file_type": "image"},
+                    "metadata": {"page": 1, "filename": original_filename, "file_type": "image"},
                 }
             )
 
@@ -194,6 +273,7 @@ async def upload_pdf_to_workspace(
             dest, cleaned_docs,
             workspace_id=ws.id,
             pdf_id=pdf_record.id,
+            original_filename=original_filename,
         )
 
         # Update record
@@ -202,7 +282,7 @@ async def upload_pdf_to_workspace(
         db.commit()
 
         return JSONResponse({
-            "message": f"{file.filename} added to workspace and indexed!",
+            "message": f"{original_filename} added to workspace and indexed!",
             "pdf_id": pdf_record.id,
             "chunks_added": added_chunks,
             "pages": len(cleaned_docs),
@@ -210,9 +290,14 @@ async def upload_pdf_to_workspace(
 
     except Exception as e:
         logger.error(f"Error processing PDF: {e}\n{traceback.format_exc()}")
+        if os.path.exists(dest):
+            try:
+                os.remove(dest)
+            except OSError:
+                logger.warning(f"Could not delete failed upload file: {dest}")
         db.delete(pdf_record)
         db.commit()
-        raise HTTPException(status_code=500, detail=f"Error processing {file.filename}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing {original_filename}: {str(e)}")
 
 
 @router.delete("/{ws_id}/pdfs/{pdf_id}")
@@ -221,12 +306,10 @@ def remove_pdf(ws_id: str, pdf_id: str, user: User = Depends(get_current_user), 
     pdf = db.query(WorkspacePDF).filter(WorkspacePDF.id == pdf_id, WorkspacePDF.workspace_id == ws_id).first()
     if not pdf:
         raise HTTPException(status_code=404, detail="PDF not found.")
-    # Clean up FAISS vectors for this PDF (by pdf_id, then by filename as fallback)
-    deleted_count = vectorstore.delete_by_metadata({"pdf_id": pdf_id})
-    if deleted_count == 0:
-        vectorstore.delete_by_metadata({"filename": pdf.filename})
+    # Clean up vectors strictly by pdf_id to avoid cross-file deletions.
+    vectorstore.delete_by_metadata({"pdf_id": pdf_id})
     # Delete the physical file
-    file_path = os.path.join(PDF_DIR, pdf.filename)
+    file_path = pdf.file_path
     if os.path.exists(file_path):
         try:
             os.remove(file_path)

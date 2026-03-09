@@ -7,7 +7,7 @@ export default function AdminPanel({ onBack }) {
   const [maxUsers, setMaxUsers] = useState(5);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "", display_name: "" });
+  const [form, setForm] = useState({ email: "", display_name: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -31,13 +31,19 @@ export default function AdminPanel({ onBack }) {
     setError("");
     setSuccess("");
     try {
-      const data = await inviteUser(form.email, form.password, form.display_name);
+      const inviteEmail = form.email.trim().toLowerCase();
+      const adminEmail = users.find((u) => u.role === "admin")?.email?.toLowerCase();
+      if (inviteEmail && adminEmail && inviteEmail === adminEmail) {
+        setError("You cannot invite the admin email.");
+        return;
+      }
+      const data = await inviteUser(inviteEmail, form.display_name);
       setSuccess(data.message);
-      setForm({ email: "", password: "", display_name: "" });
+      setForm({ email: "", display_name: "" });
       setShowForm(false);
       fetchUsers();
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to create user.");
+      setError(err?.response?.data?.detail || "Failed to send invite.");
     }
   };
 
@@ -97,7 +103,9 @@ export default function AdminPanel({ onBack }) {
                     <span className="ml-2 text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full">Inactive</span>
                   )}
                 </p>
-                <p className="text-xs text-gray-400">{u.email}</p>
+                <p className="text-xs text-gray-400">
+                  {u.role === "admin" ? "Admin account" : u.email}
+                </p>
               </div>
               {u.role !== "admin" && (
                 <button
@@ -127,7 +135,7 @@ export default function AdminPanel({ onBack }) {
           </button>
         ) : (
           <form onSubmit={handleInvite} className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
-            <h3 className="text-sm font-medium text-gray-700">New User</h3>
+            <h3 className="text-sm font-medium text-gray-700">Invite User</h3>
             <input
               type="email"
               value={form.email}
@@ -143,17 +151,12 @@ export default function AdminPanel({ onBack }) {
               placeholder="Display name (optional)"
               className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm outline-none focus:border-emerald-400 transition"
             />
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              placeholder="Password"
-              className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm outline-none focus:border-emerald-400 transition"
-              required
-            />
+            <p className="text-xs text-gray-500">
+              The user will receive an invitation email with temporary login credentials.
+            </p>
             <div className="flex gap-2">
               <button type="submit" className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition cursor-pointer">
-                Create
+                Send Invite
               </button>
               <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition cursor-pointer">
                 Cancel

@@ -1,6 +1,7 @@
-from typing import Optional
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
 from ..utils.logger import logger
+from ..utils.config import OCR_TIMEOUT_SECONDS
 
 _reader = None
 
@@ -22,7 +23,18 @@ def extract_text_from_image(image_path: str) -> str:
     Returns cleaned text; raises ValueError when no meaningful text is found.
     """
     reader = _get_reader()
-    results = reader.readtext(image_path, detail=0, paragraph=True)
+
+    def _read():
+        return reader.readtext(image_path, detail=0, paragraph=True)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(_read)
+        try:
+            results = future.result(timeout=OCR_TIMEOUT_SECONDS)
+        except FuturesTimeoutError:
+            future.cancel()
+            raise TimeoutError(f"OCR timed out after {OCR_TIMEOUT_SECONDS} seconds.")
+
     text = "\n".join([r.strip() for r in results if isinstance(r, str) and r.strip()])
     if not text:
         raise ValueError("No readable text found in the image.")
