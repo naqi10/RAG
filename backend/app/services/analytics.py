@@ -9,62 +9,47 @@ from ..models import (
 )
 
 
-def get_user_stats(user_id: str, db: Session) -> dict:
-    """Overall user statistics."""
-    total_workspaces = db.query(Workspace).filter(Workspace.user_id == user_id).count()
-    total_pdfs = (
-        db.query(WorkspacePDF)
-        .join(Workspace)
-        .filter(Workspace.user_id == user_id)
-        .count()
-    )
-    total_conversations = (
-        db.query(Conversation)
-        .filter(Conversation.user_id == user_id)
-        .count()
-    )
-    total_messages = (
-        db.query(Message)
-        .join(Conversation)
-        .filter(Conversation.user_id == user_id)
-        .count()
-    )
+def _build_stats(
+    db: Session,
+    workspace_filter_query,
+    conversation_filter_query,
+    quiz_filter_query,
+    note_filter_query,
+    session_filter_query,
+):
+    workspace_clause = workspace_filter_query.whereclause
+    conversation_clause = conversation_filter_query.whereclause
 
-    # Quiz stats
-    quizzes = db.query(Quiz).filter(Quiz.user_id == user_id).all()
-    completed_quizzes = [q for q in quizzes if q.status == "completed"]
+    total_workspaces = workspace_filter_query.count()
+    pdf_query = db.query(WorkspacePDF).join(Workspace)
+    if workspace_clause is not None:
+        pdf_query = pdf_query.filter(workspace_clause)
+    total_pdfs = pdf_query.count()
+    total_conversations = conversation_filter_query.count()
+    message_query = db.query(Message).join(Conversation)
+    if conversation_clause is not None:
+        message_query = message_query.filter(conversation_clause)
+    total_messages = message_query.count()
+
+    quizzes = quiz_filter_query.all()
+    completed_quizzes = [q for q in quizzes if q.status == "completed" and q.score is not None]
     avg_score = (
         round(sum(q.score for q in completed_quizzes) / len(completed_quizzes))
         if completed_quizzes
         else 0
     )
+    total_notes = note_filter_query.count()
 
-    total_notes = db.query(Note).filter(Note.user_id == user_id).count()
-
-    # Study streak (days with at least one study session in the last 30 days)
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    sessions = (
-        db.query(StudySession)
-        .filter(StudySession.user_id == user_id, StudySession.created_at >= thirty_days_ago)
-        .all()
-    )
-    active_days = set()
-    for s in sessions:
-        if s.created_at:
-            active_days.add(s.created_at.date())
+    sessions = session_filter_query.filter(StudySession.created_at >= thirty_days_ago).all()
+    active_days = {s.created_at.date() for s in sessions if s.created_at}
 
-    # Also count days with messages as activity
-    recent_messages = (
-        db.query(Message)
-        .join(Conversation)
-        .filter(Conversation.user_id == user_id, Message.created_at >= thirty_days_ago)
-        .all()
-    )
-    for m in recent_messages:
-        if m.created_at:
-            active_days.add(m.created_at.date())
+    recent_message_query = db.query(Message).join(Conversation).filter(Message.created_at >= thirty_days_ago)
+    if conversation_clause is not None:
+        recent_message_query = recent_message_query.filter(conversation_clause)
+    recent_messages = recent_message_query.all()
+    active_days.update({m.created_at.date() for m in recent_messages if m.created_at})
 
-    # Calculate current streak
     streak = 0
     today = datetime.utcnow().date()
     for i in range(30):
@@ -85,6 +70,32 @@ def get_user_stats(user_id: str, db: Session) -> dict:
         "total_notes": total_notes,
         "study_streak_days": streak,
     }
+
+
+def get_user_stats(user_id: str, db: Session) -> dict:
+    """Overall user statistics."""
+    return _build_stats(
+        db=db,
+        workspace_filter_query=db.query(Workspace).filter(Workspace.user_id == user_id),
+        conversation_filter_query=db.query(Conversation).filter(Conversation.user_id == user_id),
+        quiz_filter_query=db.query(Quiz).filter(Quiz.user_id == user_id),
+        note_filter_query=db.query(Note).filter(Note.user_id == user_id),
+        session_filter_query=db.query(StudySession).filter(StudySession.user_id == user_id),
+    )
+
+
+def get_admin_stats(db: Session) -> dict:
+    """Global analytics for admin dashboard across all users."""
+    stats = _build_stats(
+        db=db,
+        workspace_filter_query=db.query(Workspace),
+        conversation_filter_query=db.query(Conversation),
+        quiz_filter_query=db.query(Quiz),
+        note_filter_query=db.query(Note),
+        session_filter_query=db.query(StudySession),
+    )
+    stats["total_users"] = db.query(User).filter(User.role != "admin").count()
+    return stats
 
 
 def get_workspace_stats(workspace_id: str, user_id: str, db: Session) -> dict:

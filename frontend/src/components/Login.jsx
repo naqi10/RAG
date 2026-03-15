@@ -28,10 +28,17 @@ export default function Login() {
     if (!email || !password) return;
     setLoading(true);
     setError("");
+    // Clear any stale token before a fresh login attempt
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     try {
       await login(email, password);
     } catch (err) {
-      setError(err?.response?.data?.detail || "Login failed. Check your credentials.");
+      if (!err?.response) {
+        setError("Cannot reach the server. Make sure the backend is running on port 8000.");
+      } else {
+        setError(err.response.data?.detail || "Invalid email or password.");
+      }
     } finally {
       setLoading(false);
     }

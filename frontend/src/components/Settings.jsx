@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { FiCpu, FiRefreshCw, FiCheck, FiAlertCircle, FiCloud, FiServer, FiZap } from "react-icons/fi";
-import { getLLMStatus, getAppConfig, switchLLMProvider, getProvidersStatus } from "../api/client";
+import { FiCpu, FiRefreshCw, FiCheck, FiAlertCircle, FiCloud, FiServer, FiZap, FiUser, FiBook, FiMessageSquare, FiGlobe, FiEdit2, FiSave } from "react-icons/fi";
+import { getLLMStatus, getAppConfig, switchLLMProvider, getProvidersStatus, getMyProfile, updateMyProfile } from "../api/client";
 
 export default function Settings() {
   const [config, setConfig] = useState(null);
@@ -8,12 +8,20 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState(false);
 
+  // Profile state
+  const [profile, setProfile] = useState(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [savingName, setSavingName] = useState(false);
+
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [cfg, prov] = await Promise.all([getAppConfig(), getProvidersStatus()]);
+      const [cfg, prov, prof] = await Promise.all([getAppConfig(), getProvidersStatus(), getMyProfile()]);
       setConfig(cfg);
       setProviders(prov);
+      setProfile(prof);
+      setNameInput(prof?.name || "");
     } catch {
       /* ignore */
     } finally {
@@ -22,6 +30,25 @@ export default function Settings() {
   };
 
   useEffect(() => { fetchAll(); }, []);
+
+  const handleSaveName = async () => {
+    if (!nameInput.trim()) return;
+    setSavingName(true);
+    try {
+      await updateMyProfile({ display_name: nameInput.trim() });
+      setProfile(p => ({ ...p, name: nameInput.trim() }));
+      setEditingName(false);
+    } catch { /* ignore */ } finally {
+      setSavingName(false);
+    }
+  };
+
+  const handleLangChange = async (lang) => {
+    try {
+      await updateMyProfile({ preferred_language: lang });
+      setProfile(p => ({ ...p, preferred_language: lang }));
+    } catch { /* ignore */ }
+  };
 
   const handleSwitch = async (provider) => {
     if (switching || provider === config?.llm_provider) return;
@@ -45,7 +72,7 @@ export default function Settings() {
   return (
     <div className="max-w-2xl mx-auto py-10 px-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
-      <p className="text-sm text-gray-500 mb-8">Manage your AI provider — switch between cloud and offline mode instantly.</p>
+      <p className="text-sm text-gray-500 mb-8">Manage your profile, AI provider, and preferences.</p>
 
       {loading ? (
         <div className="flex items-center gap-2 text-gray-400 text-sm">
@@ -53,6 +80,112 @@ export default function Settings() {
         </div>
       ) : (
         <div className="space-y-6">
+
+          {/* ═══ My Profile Card ═══ */}
+          {profile && (
+            <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm p-5">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-200/40">
+                  <FiUser className="text-white text-lg" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-900">My Profile</h2>
+                  <p className="text-xs text-gray-500">The AI remembers this to personalise responses</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Name row */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 w-32 shrink-0">
+                    <FiUser size={13} /> Name
+                  </div>
+                  {editingName ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        value={nameInput}
+                        onChange={e => setNameInput(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && handleSaveName()}
+                        className="flex-1 border border-rose-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-rose-100"
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleSaveName}
+                        disabled={savingName}
+                        className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-xs font-medium hover:bg-rose-600 transition flex items-center gap-1"
+                      >
+                        <FiSave size={11} /> Save
+                      </button>
+                      <button onClick={() => setEditingName(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-1 justify-between">
+                      <span className="font-medium text-sm text-gray-800">{profile.name}</span>
+                      <button onClick={() => setEditingName(true)} className="text-gray-400 hover:text-rose-500 transition">
+                        <FiEdit2 size={13} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-rose-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-rose-600">{profile.total_messages}</div>
+                    <div className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
+                      <FiMessageSquare size={10} /> Messages sent
+                    </div>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-3 text-center">
+                    <div className="text-lg font-bold text-purple-600">{profile.total_study_sessions}</div>
+                    <div className="text-[11px] text-gray-500 flex items-center justify-center gap-1 mt-0.5">
+                      <FiBook size={10} /> Study sessions
+                    </div>
+                  </div>
+                </div>
+
+                {/* Study topics */}
+                {profile.study_topics?.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><FiBook size={11} /> Topics the AI knows you&apos;ve studied</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {profile.study_topics.slice(-20).map(t => (
+                        <span key={t} className="text-[11px] px-2 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-full">{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Language preference */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-2 flex items-center gap-1"><FiGlobe size={11} /> Language preference</p>
+                  <div className="flex gap-2">
+                    {[["english", "English"], ["urdu", "اردو / Roman Urdu"], ["mixed", "Mixed"]].map(([val, label]) => (
+                      <button
+                        key={val}
+                        onClick={() => handleLangChange(val)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                          profile.preferred_language === val
+                            ? "bg-rose-500 text-white border-rose-500"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Last session */}
+                {profile.last_topic_summary && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-[11px] text-gray-400 mb-1">Last session</p>
+                    <p className="text-xs text-gray-700">{profile.last_topic_summary}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {/* ═══ Provider Selector ═══ */}
           <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm p-5">
             <div className="flex items-center justify-between mb-5">

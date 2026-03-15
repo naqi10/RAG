@@ -12,7 +12,10 @@ function addInterceptors(instance) {
   instance.interceptors.response.use(
     (res) => res,
     (err) => {
-      if (err?.response?.status === 401 && localStorage.getItem("token")) {
+      const requestUrl = err?.config?.url || "";
+      const isAuthRoute = requestUrl.includes("/auth/");
+      // Only auto-logout on 401 for protected routes, NOT for login/auth calls
+      if (err?.response?.status === 401 && localStorage.getItem("token") && !isAuthRoute) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.location.reload();
@@ -54,6 +57,21 @@ export const togglePDF = (wsId, pdfId) => api.patch(`/workspaces/${wsId}/pdfs/${
 export const removePDF = (wsId, pdfId) => api.delete(`/workspaces/${wsId}/pdfs/${pdfId}`).then(r => r.data);
 export const updatePDFTags = (wsId, pdfId, tags) => api.patch(`/workspaces/${wsId}/pdfs/${pdfId}/tags`, { tags }).then(r => r.data);
 
+// ── Personal Library (workspace-free frontend API) ──
+export const getLibraryPDFs = () => api.get("/library/pdfs").then(r => r.data);
+export async function uploadToLibrary(file, tags = "", displayName = "") {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("tags", tags);
+  form.append("display_name", displayName);
+  const { data } = await llmApi.post("/library/upload", form);
+  return data;
+}
+export const toggleLibraryPDF = (pdfId) => api.patch(`/library/pdfs/${pdfId}/toggle`).then(r => r.data);
+export const removeLibraryPDF = (pdfId) => api.delete(`/library/pdfs/${pdfId}`).then(r => r.data);
+export const getLibraryConversations = () => api.get("/library/conversations").then(r => r.data);
+export const createLibraryConversation = (title) => api.post("/library/conversations", { title }).then(r => r.data);
+
 // ── Workspace Conversations ──
 export const getWorkspaceConversations = (wsId) => api.get(`/workspaces/${wsId}/conversations`).then(r => r.data);
 export const createWorkspaceConversation = (wsId, title) => api.post(`/workspaces/${wsId}/conversations`, { title }).then(r => r.data);
@@ -77,6 +95,10 @@ export const getLLMStatus = () => api.get("/settings/status").then(r => r.data);
 export const getAppConfig = () => api.get("/settings/config").then(r => r.data);
 export const switchLLMProvider = (provider) => api.post("/settings/switch-llm", { provider }).then(r => r.data);
 export const getProvidersStatus = () => api.get("/settings/providers-status").then(r => r.data);
+
+// ── User Profile ──
+export const getMyProfile = () => api.get("/settings/my-profile").then(r => r.data);
+export const updateMyProfile = (data) => api.patch("/settings/my-profile", data).then(r => r.data);
 
 // ── Quiz ──
 export const generateQuiz = (query, workspaceId, activePdfIds, options = {}) =>

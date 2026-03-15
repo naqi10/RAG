@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from .routes import pdf, rag, settings, quiz, notes, analytics, mindmap
-from .routes import auth_routes, admin, conversations, workspaces
+from .routes import auth_routes, admin, conversations, workspaces, library
 from .database import engine, SessionLocal, Base
 from .models import User
 from .auth import hash_password
@@ -25,6 +25,7 @@ app = FastAPI(title="RAG PDF Chatbot")
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
 app.include_router(workspaces.router, prefix="/workspaces", tags=["workspaces"])
+app.include_router(library.router, prefix="/library", tags=["library"])
 app.include_router(conversations.router, prefix="/conversations", tags=["conversations"])
 app.include_router(pdf.router, prefix="/pdf", tags=["pdf"])
 app.include_router(rag.router, prefix="/rag", tags=["rag"])

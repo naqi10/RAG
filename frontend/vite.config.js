@@ -10,6 +10,7 @@ export default defineConfig({
       '/auth': 'http://127.0.0.1:8000',
       '/admin': 'http://127.0.0.1:8000',
       '/workspaces': 'http://127.0.0.1:8000',
+      '/library': 'http://127.0.0.1:8000',
       '/conversations': 'http://127.0.0.1:8000',
       '/pdf': 'http://127.0.0.1:8000',
       '/rag': 'http://127.0.0.1:8000',

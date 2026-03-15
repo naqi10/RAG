@@ -16,16 +16,21 @@ class ConversationMemory:
 
     def __init__(
         self,
-        max_messages: int = 25,
-        summary_trigger: int = 10,
-        max_vector_memory: int = 300,
+        max_messages: int = 50,
+        summary_trigger: int = 20,
+        max_vector_memory: int = 500,
     ):
         self._store: Dict[str, Dict] = {}
         self._lock = Lock()
         self.max_messages = max_messages
         self.summary_trigger = summary_trigger
         self.max_vector_memory = max_vector_memory
-        self.embedder = SentenceTransformer("all-MiniLM-L6-v2")
+        self.embedder = None
+
+    def _get_embedder(self):
+        if self.embedder is None:
+            self.embedder = SentenceTransformer("all-MiniLM-L6-v2")
+        return self.embedder
 
     def _key(self, session_id: str) -> str:
         return hashlib.sha256(session_id.encode()).hexdigest()
@@ -67,7 +72,7 @@ class ConversationMemory:
             # Batch encode all messages at once (much faster than one-by-one)
             if texts:
                 try:
-                    embeddings = self.embedder.encode(texts, batch_size=64, show_progress_bar=False)
+                    embeddings = self._get_embedder().encode(texts, batch_size=64, show_progress_bar=False)
                     for emb, text in zip(embeddings, texts):
                         session["vectors"].append((emb, text))
                 except Exception:
@@ -91,7 +96,7 @@ class ConversationMemory:
                 session["messages"] = session["messages"][-self.max_messages:]
 
             try:
-                emb = self.embedder.encode([text])[0]
+                emb = self._get_embedder().encode([text])[0]
                 session["vectors"].append((emb, text))
                 if len(session["vectors"]) > self.max_vector_memory:
                     session["vectors"].pop(0)
@@ -125,7 +130,7 @@ class ConversationMemory:
             session = self._store.get(key)
             if not session or not session.get("vectors"):
                 return []
-            query_vec = self.embedder.encode([query])[0]
+            query_vec = self._get_embedder().encode([query])[0]
             embeddings = np.array([v[0] for v in session["vectors"]])
             texts = [v[1] for v in session["vectors"]]
             sims = cosine_similarity([query_vec], embeddings)[0]

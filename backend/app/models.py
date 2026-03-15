@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Text, Integer
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Text, Integer, Float
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -118,6 +118,26 @@ class StudySession(Base):
     duration_seconds = Column(Integer, default=0)
     metadata_json = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UserProfile(Base):
+    """Persistent personality profile — grows with every conversation."""
+    __tablename__ = "user_profiles"
+
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    # JSON list of study topics e.g. ["thermodynamics", "calculus", "data structures"]
+    study_topics = Column(Text, default="[]")
+    # Detected language preference: "english" | "urdu" | "mixed"
+    preferred_language = Column(String, default="english")
+    # Lifetime counters
+    total_messages = Column(Integer, default=0)
+    total_study_sessions = Column(Integer, default=0)
+    # Last seen & last topic summary (a short plain-text sentence the LLM can read)
+    last_topic_summary = Column(Text, default="")
+    last_seen = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", foreign_keys=[user_id])
 
 
 class Note(Base):

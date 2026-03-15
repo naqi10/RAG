@@ -5,7 +5,8 @@ from sentence_transformers import SentenceTransformer, util
 # Load a lightweight, fast model for semantic intent scoring
 # all-MiniLM-L6-v2 is a good balance of speed/quality; change if you want larger models.
 _MODEL_NAME = "all-MiniLM-L6-v2"
-_model = SentenceTransformer(_MODEL_NAME)
+_model = None
+INTENT_EMBS = {}
 
 # Expanded intent phrases tuned for academic use-cases
 INTENTS: Dict[str, List[str]] = {
@@ -45,12 +46,22 @@ INTENTS: Dict[str, List[str]] = {
     ],
 }
 
-# Precompute embeddings for intent examples to speed up runtime detection
-# Each entry is a tensor of embeddings for that intent's example phrases.
-INTENT_EMBS = {
-    intent: _model.encode(examples, convert_to_tensor=True)
-    for intent, examples in INTENTS.items()
-}
+def _get_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer(_MODEL_NAME)
+    return _model
+
+
+def _ensure_intent_embeddings():
+    global INTENT_EMBS
+    if INTENT_EMBS:
+        return
+    model = _get_model()
+    INTENT_EMBS = {
+        intent: model.encode(examples, convert_to_tensor=True)
+        for intent, examples in INTENTS.items()
+    }
 
 
 def detect_intent(query: str, debug: bool = False, threshold: float = 0.45) -> str:
@@ -71,7 +82,9 @@ def detect_intent(query: str, debug: bool = False, threshold: float = 0.45) -> s
     if not query or not isinstance(query, str):
         return "qa"
 
-    q_emb = _model.encode(query, convert_to_tensor=True)
+    _ensure_intent_embeddings()
+    model = _get_model()
+    q_emb = model.encode(query, convert_to_tensor=True)
 
     scores = {}
     for intent, emb in INTENT_EMBS.items():

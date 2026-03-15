@@ -40,7 +40,8 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "25"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 MAX_IMAGE_WIDTH = int(os.getenv("MAX_IMAGE_WIDTH", "5000"))
 MAX_IMAGE_HEIGHT = int(os.getenv("MAX_IMAGE_HEIGHT", "7000"))
-OCR_TIMEOUT_SECONDS = int(os.getenv("OCR_TIMEOUT_SECONDS", "25"))
+OCR_TIMEOUT_SECONDS = int(os.getenv("OCR_TIMEOUT_SECONDS", "45"))
+OCR_FAST_MAX_DIM = int(os.getenv("OCR_FAST_MAX_DIM", "2200"))
 
 # Email invite settings
 BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")

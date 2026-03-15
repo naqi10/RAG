@@ -22,7 +22,10 @@ export function AuthProvider({ children }) {
       } catch {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        if (!cancelled) setToken(null);
+        if (!cancelled) {
+          setToken(null);
+          setUser(null);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }

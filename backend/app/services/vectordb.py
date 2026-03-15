@@ -2,25 +2,34 @@ import os
 from ..services.embeddings import get_embedder
 from langchain_community.vectorstores import FAISS
 from ..utils.config import VECTORSTORE_DIR
+from ..utils.logger import logger
 
 class VectorStoreManager:
     def __init__(self, persist_directory: str = VECTORSTORE_DIR):
         self.persist_directory = persist_directory
         os.makedirs(self.persist_directory, exist_ok=True)
         self.store = None
-        # try load if exists
+        self._loaded = False
+
+    def _ensure_loaded(self):
+        if self._loaded:
+            return
+        self._loaded = True
         try:
             self.store = FAISS.load_local(
                 self.persist_directory,
                 get_embedder(),
                 allow_dangerous_deserialization=True,
             )
+            logger.info("Vector store loaded from disk.")
         except Exception:
+            # Expected when store does not exist yet.
             self.store = None
 
     def add_documents(self, docs):
         if not docs:
             return
+        self._ensure_loaded()
         if self.store is None:
             self.store = FAISS.from_documents(docs, get_embedder())
         else:
@@ -28,12 +37,14 @@ class VectorStoreManager:
         self.store.save_local(self.persist_directory)
 
     def as_retriever(self, k: int = 4):
+        self._ensure_loaded()
         if self.store is None:
             raise ValueError("Vector store is empty. Upload and index some docs first.")
         return self.store.as_retriever(search_kwargs={"k": k})
 
     def get_docs_by_metadata(self, filter_dict: dict, k: int = 6):
         """Return docs matching metadata filter without semantic search (for meta questions)."""
+        self._ensure_loaded()
         if self.store is None or not filter_dict:
             return []
         matched = []
@@ -59,6 +70,7 @@ class VectorStoreManager:
 
     def delete_by_metadata(self, filter_dict: dict) -> int:
         """Delete all documents matching metadata filter. Returns count of deleted docs."""
+        self._ensure_loaded()
         if self.store is None or not filter_dict:
             return 0
         ids_to_delete = []
@@ -90,6 +102,7 @@ class VectorStoreManager:
         For list values, matches if the metadata value is IN the list.
         Fetches a large candidate pool to handle cases where matching docs are sparse.
         """
+        self._ensure_loaded()
         if self.store is None:
             return []
         if filter_dict:
