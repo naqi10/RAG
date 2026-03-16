@@ -24,7 +24,7 @@ openai==2.20.0
 # Python 3.11/3.12 recommended. Python 3.13 has limited wheel support for torch/faiss.
 sentence-transformers==3.4.1
 transformers==4.49.0
-huggingface-hub==0.30.2
+huggingface-hub>=0.33.4,<1.0.0
 torch>=2.3.0,<3.0.0
 numpy>=2.1.0,<3.0.0
 scikit-learn>=1.6.0
