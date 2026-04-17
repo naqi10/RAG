@@ -93,3 +93,51 @@ def rerank_documents(
     )
 
     return top_docs
+
+
+def rerank_documents_with_scores(
+    query: str,
+    documents: List[Any],
+    top_n: int = 3,
+) -> Tuple[List[Any], float]:
+    """
+    Rerank and also return the top (best) rerank score.
+
+    Returns:
+        (top_docs, best_score) — best_score is the highest cross-encoder
+        score among all candidates. Returns -1.0 if reranker unavailable.
+    """
+    if not documents:
+        return documents, -1.0
+
+    model = _load_reranker()
+    if model is None:
+        logger.warning("Reranker unavailable — returning first %d docs as-is.", top_n)
+        return documents[:top_n], -1.0
+
+    pairs: List[Tuple[str, str]] = []
+    for doc in documents:
+        text = getattr(doc, "page_content", None) or str(doc)
+        pairs.append((query, text))
+
+    try:
+        scores = model.predict(pairs)
+    except Exception as e:
+        logger.error(f"Reranker prediction failed: {e}")
+        return documents[:top_n], -1.0
+
+    scored = sorted(zip(scores, documents), key=lambda x: x[0], reverse=True)
+    top_docs = [doc for _, doc in scored[:top_n]]
+    best_score = float(scored[0][0])
+
+    if logger.isEnabledFor(10):
+        for rank, (score, doc) in enumerate(scored[:top_n]):
+            snippet = (getattr(doc, "page_content", "") or "")[:80]
+            logger.debug(f"  Rerank #{rank+1} score={score:.4f} | {snippet}...")
+
+    logger.info(
+        f"Reranked {len(documents)} docs → top {len(top_docs)} "
+        f"(best={best_score:.4f}, worst kept={scored[min(top_n-1, len(scored)-1)][0]:.4f})"
+    )
+
+    return top_docs, best_score

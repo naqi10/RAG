@@ -5,6 +5,7 @@ import {
   FiLayers, FiCheckCircle, FiGitBranch, FiFileText, FiCpu,
   FiEye, FiEyeOff,
 } from "react-icons/fi";
+import DreamyBackground from "./DreamyBackground";
 
 const FEATURES = [
   { icon: FiMessageSquare, title: "AI-Powered Chat", description: "Ask questions and get cited answers from your PDFs" },
@@ -12,7 +13,7 @@ const FEATURES = [
   { icon: FiCheckCircle, title: "Quiz Generator", description: "Auto-generate MCQ and short-answer quizzes" },
   { icon: FiGitBranch, title: "Mind Maps", description: "Visualize concepts and create structured summaries" },
   { icon: FiFileText, title: "Notes & Highlights", description: "Annotate documents and organize your study notes" },
-  { icon: FiCpu, title: "Fully Offline", description: "Runs locally with Ollama — no data leaves your machine" },
+  { icon: FiCpu, title: "Private by design", description: "Optional on-device mode — your library stays yours" },
 ];
 
 export default function Login() {
@@ -28,7 +29,6 @@ export default function Login() {
     if (!email || !password) return;
     setLoading(true);
     setError("");
-    // Clear any stale token before a fresh login attempt
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     try {
@@ -45,100 +45,138 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900 text-white p-12 flex-col justify-between relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 right-10 w-96 h-96 rounded-full bg-white/20 blur-3xl" />
-          <div className="absolute bottom-10 left-10 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
-        </div>
+    <div className="relative min-h-screen flex">
+      <DreamyBackground />
 
-        <div className="relative z-10">
+      {/* Left — branding */}
+      <div className="hidden lg:flex lg:w-[46%] relative z-10 p-10 xl:p-12 flex-col justify-center gap-10 xl:gap-12 text-[#5c3d55]">
+        <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-              <FiCpu size={20} />
+            <div
+              className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shadow-lg"
+              style={{
+                background: "linear-gradient(145deg, #FEC8D8, #E0BBE4)",
+                boxShadow: "0 8px 28px rgba(224,187,228,0.45), 0 0 0 2px rgba(255,255,255,0.9)",
+              }}
+            >
+              ✨
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">StudyAI</h1>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-wide text-[#6b4a63]">StudyAI</h1>
+              <p className="text-xs tracking-wider opacity-75">Academic RAG App</p>
+            </div>
           </div>
-          <p className="text-emerald-100 text-sm mt-1">Your AI-powered study companion</p>
         </div>
 
-        <div className="relative z-10 space-y-5">
-          <h2 className="text-xl font-semibold">Everything you need to learn smarter</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {FEATURES.map(({ icon: Icon, title, description }) => (
-              <div key={title} className="bg-white/10 backdrop-blur-sm rounded-xl p-3.5 border border-white/10">
-                <Icon size={18} className="text-emerald-200 mb-2" />
-                <h3 className="font-medium text-sm mb-0.5">{title}</h3>
-                <p className="text-[11px] text-emerald-200 leading-relaxed">{description}</p>
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold tracking-wide text-[#6b4a63]">
+            Everything you need
+          </h2>
+          <div className="grid grid-cols-2 gap-2.5">
+            {FEATURES.map(({ icon: _Icon, title, description }) => {
+              const Icon = _Icon;
+              return (
+              <div
+                key={title}
+                className="dreamy-glass-card rounded-2xl p-3.5 border border-white/80"
+              >
+                <Icon size={17} className="text-[#c77b9e] mb-2" />
+                <h3 className="font-medium text-sm text-[#6b4a63] mb-0.5">{title}</h3>
+                <p className="text-[11px] leading-relaxed opacity-80">{description}</p>
               </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
-
-        <div className="relative z-10">
-          <p className="text-xs text-emerald-300">
-            Built with LangChain, FAISS, and local LLMs via Ollama
-          </p>
         </div>
       </div>
 
-      {/* Right Panel - Login Form */}
-      <div className="flex-1 flex items-center justify-center bg-[#FAFAFA] p-8">
-        <div className="w-full max-w-sm">
-          {/* Mobile header */}
+      {/* Right — form */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 relative z-10">
+        <div className="w-full max-w-[400px]">
           <div className="text-center mb-8">
-            <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center">
-                <FiCpu size={18} className="text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900">StudyAI</h1>
+            <div className="lg:hidden flex items-center justify-center gap-2 mb-5">
+              <span
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                style={{
+                  background: "linear-gradient(145deg, #FEC8D8, #E0BBE4)",
+                  boxShadow: "0 6px 20px rgba(224,187,228,0.4)",
+                }}
+              >
+                🌷
+              </span>
+              <h1 className="text-xl font-semibold text-[#6b4a63] tracking-wide">StudyAI</h1>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 lg:text-2xl">Welcome back</h2>
-            <p className="text-sm text-gray-500 mt-1">Sign in to your account to continue</p>
+            <h2 className="text-xl sm:text-2xl font-semibold text-[#6b4a63] tracking-wide">Welcome back</h2>
+            <p className="text-sm mt-2 opacity-70">Sign in to continue to Academic RAG App</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-6 space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            className="dreamy-glass-card-strong rounded-[1.75rem] p-6 sm:p-7 space-y-4"
+          >
             {error && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-4 py-2.5 rounded-xl border border-red-200">
+              <div
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border backdrop-blur-sm"
+                style={{
+                  background: "rgba(254,202,202,0.45)",
+                  borderColor: "rgba(248,113,113,0.35)",
+                  color: "#991b1b",
+                }}
+              >
                 <FiAlertCircle size={16} className="shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
+              <label className="block text-xs font-medium mb-1.5 opacity-80 tracking-wide">Email</label>
               <div className="relative">
-                <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+                <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-45" size={15} />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@pdfchat.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
+                  placeholder="you@example.com"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm outline-none transition shadow-sm bg-white/80"
+                  style={{ borderColor: "rgba(224,187,228,0.55)", color: "#4a3d4f" }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(255,154,162,0.85)";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(255,192,203,0.4), 0 0 24px rgba(224,187,228,0.25)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "rgba(224,187,228,0.55)";
+                    e.target.style.boxShadow = "";
+                  }}
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Password</label>
+              <label className="block text-xs font-medium mb-1.5 opacity-80 tracking-wide">Password</label>
               <div className="relative">
-                <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+                <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-45" size={15} />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
+                  placeholder="Your password"
+                  className="w-full pl-10 pr-11 py-2.5 rounded-xl border text-sm outline-none transition shadow-sm bg-white/80"
+                  style={{ borderColor: "rgba(224,187,228,0.55)", color: "#4a3d4f" }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "rgba(255,154,162,0.85)";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(255,192,203,0.4), 0 0 24px rgba(224,187,228,0.25)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "rgba(224,187,228,0.55)";
+                    e.target.style.boxShadow = "";
+                  }}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-45 hover:opacity-80 transition"
                   tabIndex={-1}
                 >
                   {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
@@ -149,22 +187,22 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading || !email || !password}
-              className="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
+              className="dreamy-btn-glow w-full py-3 rounded-xl text-white text-sm font-semibold disabled:opacity-45 tracking-wide"
+              style={{
+                background: "linear-gradient(135deg, #FF9AA2 0%, #FFC0CB 45%, #E0BBE4 100%)",
+                boxShadow: "0 8px 28px rgba(255,154,162,0.4)",
+              }}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing in...
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Signing in…
                 </span>
               ) : (
-                "Sign In"
+                "Sign in ✨"
               )}
             </button>
           </form>
-
-          <p className="text-center text-[11px] text-gray-400 mt-6">
-            Powered by LangChain + Ollama &middot; Fully Local & Private
-          </p>
         </div>
       </div>
     </div>

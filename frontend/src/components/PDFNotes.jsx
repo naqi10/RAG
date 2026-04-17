@@ -154,7 +154,7 @@ export default function PDFNotes({ workspaceId, pdfs }) {
           <button
             onClick={handleSummarize}
             disabled={summarizing || notes.length === 0}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-emerald-600 hover:bg-emerald-50 transition border border-emerald-200 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-pink-600 hover:bg-pink-50 transition border border-pink-200 disabled:opacity-50"
           >
             {summarizing ? <FiRefreshCw size={14} className="animate-spin" /> : <FiCpu size={14} />}
             AI Summary
@@ -167,7 +167,7 @@ export default function PDFNotes({ workspaceId, pdfs }) {
         <button
           onClick={() => setSelectedPdf("")}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-            !selectedPdf ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            !selectedPdf ? "bg-pink-100 text-pink-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
           All
@@ -177,7 +177,7 @@ export default function PDFNotes({ workspaceId, pdfs }) {
             key={p.id}
             onClick={() => setSelectedPdf(p.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition truncate max-w-[150px] ${
-              selectedPdf === p.id ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              selectedPdf === p.id ? "bg-pink-100 text-pink-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             {p.display_name || p.filename}
@@ -187,9 +187,9 @@ export default function PDFNotes({ workspaceId, pdfs }) {
 
       {/* AI Summary */}
       {summary && (
-        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-gray-800">
+        <div className="mb-6 p-4 bg-pink-50 border border-pink-200 rounded-xl text-sm text-gray-800">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-emerald-700 flex items-center gap-1.5">
+            <span className="font-semibold text-pink-700 flex items-center gap-1.5">
               <FiCpu size={14} /> AI Summary
             </span>
             <button onClick={() => setSummary("")} className="text-gray-400 hover:text-gray-600">
@@ -204,12 +204,12 @@ export default function PDFNotes({ workspaceId, pdfs }) {
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 hover:border-emerald-300 hover:text-emerald-600 transition mb-6"
+          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 hover:border-pink-300 hover:text-pink-600 transition mb-6"
         >
           <FiPlus size={16} /> Add Note
         </button>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+        <div className="dreamy-glass-card rounded-xl p-5 mb-6 border border-white/80">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-800 text-sm">
               {editingId ? "Edit Note" : "New Note"}
@@ -226,19 +226,22 @@ export default function PDFNotes({ workspaceId, pdfs }) {
                 { value: "note", label: "Note", icon: FiFileText },
                 { value: "highlight", label: "Highlight", icon: FiEdit2 },
                 { value: "bookmark", label: "Bookmark", icon: FiBookmark },
-              ].map(({ value, label, icon: Icon }) => (
+              ].map(({ value, label, icon: _Icon }) => {
+                const Icon = _Icon;
+                return (
                 <button
                   key={value}
                   onClick={() => setNoteType(value)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                     noteType === value
-                      ? "bg-emerald-100 text-emerald-700"
+                      ? "bg-pink-100 text-pink-700"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
                   <Icon size={12} /> {label}
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             {/* Highlighted text */}
@@ -247,7 +250,7 @@ export default function PDFNotes({ workspaceId, pdfs }) {
                 value={highlightedText}
                 onChange={(e) => setHighlightedText(e.target.value)}
                 placeholder="Paste the text you want to highlight..."
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 transition"
+                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-pink-400 transition"
               />
             )}
 
@@ -257,7 +260,7 @@ export default function PDFNotes({ workspaceId, pdfs }) {
               onChange={(e) => setNoteContent(e.target.value)}
               placeholder="Write your note..."
               rows={3}
-              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition resize-none"
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100 transition resize-none"
             />
 
             {/* Page + Tags row */}
@@ -267,13 +270,13 @@ export default function PDFNotes({ workspaceId, pdfs }) {
                 onChange={(e) => setPageNumber(e.target.value)}
                 placeholder="Page #"
                 type="number"
-                className="w-24 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 transition"
+                className="w-24 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-pink-400 transition"
               />
               <input
                 value={noteTags}
                 onChange={(e) => setNoteTags(e.target.value)}
                 placeholder="Tags (comma separated)"
-                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-400 transition"
+                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-pink-400 transition"
               />
             </div>
 
@@ -299,7 +302,7 @@ export default function PDFNotes({ workspaceId, pdfs }) {
               <button
                 onClick={handleSave}
                 disabled={!noteContent.trim()}
-                className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-pink-600 text-white text-sm font-medium hover:bg-pink-700 transition disabled:opacity-50"
               >
                 {editingId ? "Update" : "Save Note"}
               </button>
@@ -323,7 +326,7 @@ export default function PDFNotes({ workspaceId, pdfs }) {
           {notes.map((note) => (
             <div
               key={note.note_id}
-              className="bg-white rounded-xl border border-gray-200/60 p-4 hover:shadow-sm transition"
+              className="dreamy-glass-card rounded-xl p-4 hover:shadow-md transition border border-white/80"
               style={{ borderLeftWidth: "3px", borderLeftColor: note.color }}
             >
               <div className="flex items-start justify-between gap-2">

@@ -33,6 +33,7 @@ tiktoken==0.9.0
 
 # ===== Vector store =====
 faiss-cpu>=1.8.0
+rank-bm25>=0.2.2
 
 # ===== PDF loaders =====
 PyMuPDF==1.27.1

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FiCpu, FiRefreshCw, FiCheck, FiAlertCircle, FiCloud, FiServer, FiZap, FiUser, FiBook, FiMessageSquare, FiGlobe, FiEdit2, FiSave } from "react-icons/fi";
-import { getLLMStatus, getAppConfig, switchLLMProvider, getProvidersStatus, getMyProfile, updateMyProfile } from "../api/client";
+import { getAppConfig, switchLLMProvider, getProvidersStatus, getMyProfile, updateMyProfile } from "../api/client";
 
 export default function Settings() {
   const [config, setConfig] = useState(null);
@@ -83,7 +83,7 @@ export default function Settings() {
 
           {/* ═══ My Profile Card ═══ */}
           {profile && (
-            <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm p-5">
+            <div className="dreamy-glass-card rounded-xl p-5 border border-white/80">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-200/40">
                   <FiUser className="text-white text-lg" />
@@ -167,7 +167,7 @@ export default function Settings() {
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
                           profile.preferred_language === val
                             ? "bg-rose-500 text-white border-rose-500"
-                            : "bg-white text-gray-600 border-gray-200 hover:border-rose-300"
+                            : "bg-white/60 text-[#5c4a5c] border-[#E0BBE4]/50 hover:border-[#FF9AA2]/60"
                         }`}
                       >
                         {label}
@@ -187,10 +187,10 @@ export default function Settings() {
             </div>
           )}
           {/* ═══ Provider Selector ═══ */}
-          <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm p-5">
+          <div className="dreamy-glass-card rounded-xl p-5 border border-white/80">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-200/40">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center shadow-md shadow-pink-200/40">
                   <FiCpu className="text-white text-lg" />
                 </div>
                 <div>
@@ -215,25 +215,25 @@ export default function Settings() {
                 disabled={switching}
                 className={`relative p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
                   activeProvider === "groq"
-                    ? "border-emerald-500 bg-emerald-50/50 shadow-sm shadow-emerald-100"
-                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                    ? "border-pink-500 bg-pink-50/50 shadow-sm shadow-pink-100"
+                    : "border-[#E0BBE4]/50 bg-white/55 hover:border-[#FEC8D8] hover:shadow-md"
                 }`}
               >
                 {activeProvider === "groq" && (
-                  <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">ACTIVE</span>
+                  <span className="absolute top-2 right-2 bg-pink-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">ACTIVE</span>
                 )}
                 <div className="flex items-center gap-2.5 mb-2">
-                  <FiCloud size={18} className={activeProvider === "groq" ? "text-emerald-600" : "text-gray-400"} />
+                  <FiCloud size={18} className={activeProvider === "groq" ? "text-pink-600" : "text-gray-400"} />
                   <span className="font-semibold text-sm text-gray-800">Groq Cloud</span>
                 </div>
                 <p className="text-[11px] text-gray-500 mb-3">Fast cloud API — needs internet</p>
                 <div className="flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full ${
-                    groqStatus === "connected" ? "bg-emerald-500 animate-pulse" :
+                    groqStatus === "connected" ? "bg-pink-500 animate-pulse" :
                     groqStatus === "not_configured" ? "bg-gray-400" : "bg-red-500"
                   }`} />
                   <span className={`text-[11px] font-medium ${
-                    groqStatus === "connected" ? "text-emerald-600" :
+                    groqStatus === "connected" ? "text-pink-600" :
                     groqStatus === "not_configured" ? "text-gray-500" : "text-red-500"
                   }`}>
                     {groqStatus === "connected" ? "Connected" :
@@ -248,24 +248,24 @@ export default function Settings() {
                 disabled={switching}
                 className={`relative p-4 rounded-xl border-2 text-left transition-all cursor-pointer ${
                   activeProvider === "ollama"
-                    ? "border-emerald-500 bg-emerald-50/50 shadow-sm shadow-emerald-100"
-                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                    ? "border-pink-500 bg-pink-50/50 shadow-sm shadow-pink-100"
+                    : "border-[#E0BBE4]/50 bg-white/55 hover:border-[#FEC8D8] hover:shadow-md"
                 }`}
               >
                 {activeProvider === "ollama" && (
-                  <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">ACTIVE</span>
+                  <span className="absolute top-2 right-2 bg-pink-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">ACTIVE</span>
                 )}
                 <div className="flex items-center gap-2.5 mb-2">
-                  <FiServer size={18} className={activeProvider === "ollama" ? "text-emerald-600" : "text-gray-400"} />
+                  <FiServer size={18} className={activeProvider === "ollama" ? "text-pink-600" : "text-gray-400"} />
                   <span className="font-semibold text-sm text-gray-800">Ollama Local</span>
                 </div>
                 <p className="text-[11px] text-gray-500 mb-3">Offline — runs on your machine</p>
                 <div className="flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full ${
-                    ollamaStatus === "connected" ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                    ollamaStatus === "connected" ? "bg-pink-500 animate-pulse" : "bg-red-500"
                   }`} />
                   <span className={`text-[11px] font-medium ${
-                    ollamaStatus === "connected" ? "text-emerald-600" : "text-red-500"
+                    ollamaStatus === "connected" ? "text-pink-600" : "text-red-500"
                   }`}>
                     {ollamaStatus === "connected" ? "Running" : "Not Running"}
                   </span>
@@ -274,7 +274,7 @@ export default function Settings() {
             </div>
 
             {switching && (
-              <div className="flex items-center gap-2 text-sm text-emerald-600 mb-3">
+              <div className="flex items-center gap-2 text-sm text-pink-600 mb-3">
                 <FiRefreshCw className="animate-spin" size={14} /> Switching provider...
               </div>
             )}
@@ -283,7 +283,7 @@ export default function Settings() {
             <div className="bg-gray-50 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-gray-500">Active Model:</span>
-                <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-gray-200">
+                <span className="font-mono text-xs bg-white/80 px-2 py-0.5 rounded border border-[#E0BBE4]/45">
                   {activeProvider === "ollama" ? config?.ollama_model : "llama-3.3-70b-versatile"}
                 </span>
               </div>
@@ -302,8 +302,8 @@ export default function Settings() {
                     {ollamaModels.map((m) => (
                       <span key={m} className={`text-[11px] px-2 py-0.5 rounded-lg border ${
                         m === config?.ollama_model || m.startsWith(config?.ollama_model)
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                          : "bg-white border-gray-200 text-gray-600"
+                          ? "bg-pink-50 border-pink-200 text-pink-700"
+                          : "bg-white/60 border-[#E0BBE4]/50 text-[#5c4a5c]"
                       }`}>
                         {m}
                       </span>
@@ -332,12 +332,12 @@ export default function Settings() {
           )}
 
           {/* Info Card */}
-          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200/40 p-4 text-sm text-emerald-800">
+          <div className="bg-gradient-to-r from-pink-50 to-rose-50 rounded-xl border border-pink-200/40 p-4 text-sm text-pink-800">
             <div className="flex items-start gap-2">
-              <FiZap className="mt-0.5 shrink-0 text-emerald-600" />
+              <FiZap className="mt-0.5 shrink-0 text-pink-600" />
               <div>
                 <p className="font-medium">Auto-Fallback Enabled</p>
-                <p className="text-xs mt-1 text-emerald-700">
+                <p className="text-xs mt-1 text-pink-700">
                   If your primary provider fails, the app will automatically try the other one. No manual switching needed during failures.
                 </p>
               </div>

@@ -36,9 +36,16 @@ app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 app.include_router(mindmap.router, prefix="/mindmap", tags=["mindmap"])
 
 # ── CORS ──
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

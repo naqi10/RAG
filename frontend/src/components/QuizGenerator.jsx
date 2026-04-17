@@ -227,8 +227,8 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
           <p className="text-sm text-gray-500">Test your knowledge with AI-generated quizzes from your PDFs.</p>
           {activePdfs.length > 0 ? (
             <div className="flex items-center gap-1.5 mt-2">
-              <FiFileText size={13} className="text-emerald-500" />
-              <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+              <FiFileText size={13} className="text-pink-500" />
+              <span className="text-xs text-pink-700 bg-pink-50 px-2 py-0.5 rounded-full">
                 Quiz from: {activePdfs.map((p) => p.display_name || p.filename).join(", ")}
               </span>
             </div>
@@ -249,7 +249,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder='e.g. "Neural network fundamentals" or "Chapter 3 key concepts"'
-              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100 transition"
               onKeyDown={(e) => e.key === "Enter" && startQuiz()}
             />
           </div>
@@ -261,7 +261,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
               <select
                 value={quizType}
                 onChange={(e) => setQuizType(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
+                className="w-full rounded-xl border border-[#E0BBE4]/50 px-3 py-2.5 text-sm outline-none focus:border-[#FF9AA2] bg-white/75 backdrop-blur-sm"
               >
                 <option value="mcq">Multiple Choice</option>
                 <option value="true_false">True / False</option>
@@ -275,7 +275,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
               <select
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
+                className="w-full rounded-xl border border-[#E0BBE4]/50 px-3 py-2.5 text-sm outline-none focus:border-[#FF9AA2] bg-white/75 backdrop-blur-sm"
               >
                 <option value="mixed">Mixed</option>
                 <option value="easy">Easy</option>
@@ -288,7 +288,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
               <select
                 value={numQuestions}
                 onChange={(e) => setNumQuestions(parseInt(e.target.value))}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
+                className="w-full rounded-xl border border-[#E0BBE4]/50 px-3 py-2.5 text-sm outline-none focus:border-[#FF9AA2] bg-white/75 backdrop-blur-sm"
               >
                 {[5, 10, 15, 20].map((n) => (
                   <option key={n} value={n}>{n}</option>
@@ -304,7 +304,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                 type="checkbox"
                 checked={timerEnabled}
                 onChange={(e) => setTimerEnabled(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                className="w-4 h-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
               />
               <span className="text-sm text-gray-700 flex items-center gap-1">
                 <FiClock size={13} /> Per-question timer
@@ -315,7 +315,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                 type="checkbox"
                 checked={adaptiveMode}
                 onChange={(e) => setAdaptiveMode(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                className="w-4 h-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500"
               />
               <span className="text-sm text-gray-700 flex items-center gap-1">
                 <FiZap size={13} /> Adaptive difficulty
@@ -336,7 +336,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
           <button
             onClick={startQuiz}
             disabled={loading || !topic.trim()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-pink-600 text-white font-medium hover:bg-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <><FiRefreshCw className="animate-spin" /> Generating Quiz...</>
@@ -390,7 +390,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
               <span className={`text-xs px-2 py-1 rounded-lg font-medium ${
                 (current.difficulty || "medium") === "hard" ? "bg-red-50 text-red-600" :
                 (current.difficulty || "medium") === "medium" ? "bg-amber-50 text-amber-600" :
-                "bg-emerald-50 text-emerald-600"
+                "bg-pink-50 text-pink-600"
               }`}>
                 {(current.difficulty || "medium").charAt(0).toUpperCase() + (current.difficulty || "medium").slice(1)}
               </span>
@@ -403,7 +403,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
           <div className="w-full h-1.5 bg-gray-100 rounded-full mb-2">
             <div
               className={`h-full rounded-full transition-all duration-1000 ${
-                timerDanger ? "bg-red-500" : timerPct > 50 ? "bg-emerald-500" : "bg-amber-500"
+                timerDanger ? "bg-red-500" : timerPct > 50 ? "bg-pink-500" : "bg-amber-500"
               }`}
               style={{ width: `${timerPct}%` }}
             />
@@ -413,19 +413,19 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
         {/* Progress */}
         <div className="w-full h-1 bg-gray-100 rounded-full mb-6">
           <div
-            className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+            className="h-full bg-pink-500 rounded-full transition-all duration-300"
             style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }}
           />
         </div>
 
         {/* Question Card */}
-        <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm p-6 mb-6">
+        <div className="dreamy-glass-card rounded-xl p-6 mb-6 border border-white/80">
           <div className="flex items-start gap-2 mb-4">
             {current.difficulty && (
               <span className={`text-xs px-2 py-0.5 rounded-lg font-medium ${
                 current.difficulty === "hard" ? "bg-red-50 text-red-600" :
                 current.difficulty === "medium" ? "bg-amber-50 text-amber-600" :
-                "bg-emerald-50 text-emerald-600"
+                "bg-pink-50 text-pink-600"
               }`}>
                 {current.difficulty}
               </span>
@@ -457,7 +457,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                   onClick={() => selectAnswer(currentIdx, letter)}
                   className={`w-full text-left p-4 rounded-xl border text-sm transition ${
                     isSelected
-                      ? "border-emerald-400 bg-emerald-50 text-emerald-800"
+                      ? "border-pink-400 bg-pink-50 text-pink-800"
                       : "border-gray-200 bg-white hover:border-gray-300 text-gray-700"
                   }`}
                 >
@@ -480,9 +480,9 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                   className={`p-6 rounded-xl border-2 text-lg font-semibold transition ${
                     isSelected
                       ? val === "True"
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-700"
+                        ? "border-pink-400 bg-pink-50 text-pink-700"
                         : "border-red-400 bg-red-50 text-red-700"
-                      : "border-gray-200 bg-white hover:border-gray-300 text-gray-600"
+                      : "border-[#E0BBE4]/50 bg-white/55 hover:border-[#FEC8D8] text-[#5c4a5c]"
                   }`}
                 >
                   {val === "True" ? (
@@ -508,7 +508,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
               value={answers[currentIdx] || ""}
               onChange={(e) => selectAnswer(currentIdx, e.target.value)}
               placeholder="Type the missing word or phrase..."
-              className="w-full rounded-xl border-2 border-dashed border-gray-300 px-4 py-3.5 text-base text-center outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition"
+              className="w-full rounded-xl border-2 border-dashed border-gray-300 px-4 py-3.5 text-base text-center outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100 transition"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && currentIdx < questions.length - 1) {
                   setCurrentIdx((i) => i + 1);
@@ -527,7 +527,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
               onChange={(e) => selectAnswer(currentIdx, e.target.value)}
               placeholder="Type your answer here..."
               rows={4}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition resize-none"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100 transition resize-none"
             />
           </div>
         )}
@@ -546,7 +546,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
             <button
               onClick={handleSubmit}
               disabled={loading || totalAnswered === 0}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-pink-600 text-white text-sm font-medium hover:bg-pink-700 transition disabled:opacity-50"
             >
               {loading ? <FiRefreshCw className="animate-spin" /> : <FiAward size={16} />}
               Submit Quiz
@@ -554,7 +554,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
           ) : (
             <button
               onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
-              className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm text-emerald-600 hover:bg-emerald-50 transition"
+              className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm text-pink-600 hover:bg-pink-50 transition"
             >
               Next <FiChevronRight size={16} />
             </button>
@@ -569,9 +569,9 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
               onClick={() => setCurrentIdx(i)}
               className={`w-7 h-7 rounded-lg text-xs font-medium transition ${
                 i === currentIdx
-                  ? "bg-emerald-600 text-white"
+                  ? "bg-pink-600 text-white"
                   : answers[i] !== undefined
-                  ? "bg-emerald-100 text-emerald-700"
+                  ? "bg-pink-100 text-pink-700"
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200"
               }`}
             >
@@ -594,10 +594,10 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
         {/* Score Card */}
         <div className="text-center mb-8">
           <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-4 ${
-            results.score >= 80 ? "bg-emerald-50" : results.score >= 50 ? "bg-amber-50" : "bg-red-50"
+            results.score >= 80 ? "bg-pink-50" : results.score >= 50 ? "bg-amber-50" : "bg-red-50"
           }`}>
             <span className={`text-3xl font-bold ${
-              results.score >= 80 ? "text-emerald-600" : results.score >= 50 ? "text-amber-600" : "text-red-600"
+              results.score >= 80 ? "text-pink-600" : results.score >= 50 ? "text-amber-600" : "text-red-600"
             }`}>
               {results.score}%
             </span>
@@ -620,7 +620,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
         <div className="w-full h-2 bg-gray-100 rounded-full mb-6">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              results.score >= 80 ? "bg-emerald-500" : results.score >= 50 ? "bg-amber-500" : "bg-red-500"
+              results.score >= 80 ? "bg-pink-500" : results.score >= 50 ? "bg-amber-500" : "bg-red-500"
             }`}
             style={{ width: `${results.score}%` }}
           />
@@ -628,7 +628,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
 
         {/* ── Topic Performance Heatmap ── */}
         {topicPerformance && topicPerformance.topics && topicPerformance.topics.length > 0 && (
-          <div className="mb-6 p-4 rounded-xl border border-gray-200 bg-white">
+          <div className="mb-6 p-4 rounded-xl border border-white/80 dreamy-glass-card">
             <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
               <FiBarChart2 size={14} /> Topic Performance
             </h3>
@@ -639,7 +639,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-gray-700 truncate">{t.source}</span>
                       <span className={`text-xs font-semibold ${
-                        t.strength === "strong" ? "text-emerald-600" :
+                        t.strength === "strong" ? "text-pink-600" :
                         t.strength === "medium" ? "text-amber-600" : "text-red-600"
                       }`}>
                         {t.accuracy}%
@@ -648,7 +648,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                     <div className="w-full h-2 bg-gray-100 rounded-full">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          t.strength === "strong" ? "bg-emerald-500" :
+                          t.strength === "strong" ? "bg-pink-500" :
                           t.strength === "medium" ? "bg-amber-500" : "bg-red-500"
                         }`}
                         style={{ width: `${t.accuracy}%` }}
@@ -676,11 +676,11 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
             const q = questions[r.question_index] || {};
             return (
               <div key={i} className={`p-4 rounded-xl border ${
-                r.correct ? "border-emerald-200 bg-emerald-50/50" : "border-red-200 bg-red-50/50"
+                r.correct ? "border-pink-200 bg-pink-50/50" : "border-red-200 bg-red-50/50"
               }`}>
                 <div className="flex items-start gap-2 mb-2">
                   {r.correct ? (
-                    <FiCheckCircle className="text-emerald-600 mt-0.5 shrink-0" />
+                    <FiCheckCircle className="text-pink-600 mt-0.5 shrink-0" />
                   ) : (
                     <FiXCircle className="text-red-500 mt-0.5 shrink-0" />
                   )}
@@ -691,7 +691,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                     <span className="font-medium">Your answer:</span> {r.user_answer || "(no answer)"}
                   </p>
                   {r.correct_answer && (
-                    <p className="text-emerald-700">
+                    <p className="text-pink-700">
                       <span className="font-medium">Correct:</span> {r.correct_answer}
                     </p>
                   )}
@@ -702,7 +702,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                   )}
                   {/* Source / Page Reference */}
                   {(r.text_excerpt || r.source?.page) && (
-                    <div className="mt-2 p-2.5 bg-white/80 rounded-lg border border-gray-200/50">
+                    <div className="mt-2 p-2.5 bg-white/70 rounded-lg border border-[#E0BBE4]/40 backdrop-blur-sm">
                       {r.source?.page && (
                         <span className="inline-block text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium mr-2">
                           p. {r.source.page}
@@ -720,7 +720,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
                   )}
                   {/* Also show from question data if result didn't include it */}
                   {!r.text_excerpt && !r.source?.page && (q.text_excerpt || q.source?.page) && (
-                    <div className="mt-2 p-2.5 bg-white/80 rounded-lg border border-gray-200/50">
+                    <div className="mt-2 p-2.5 bg-white/70 rounded-lg border border-[#E0BBE4]/40 backdrop-blur-sm">
                       {q.source?.page && (
                         <span className="inline-block text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium mr-2">
                           p. {q.source.page}
@@ -756,7 +756,7 @@ export default function QuizGenerator({ workspaceId, activePdfIds, pdfs = [] }) 
           )}
           <button
             onClick={resetQuiz}
-            className={`${wrongCount > 0 ? "flex-1" : "w-full"} flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition`}
+            className={`${wrongCount > 0 ? "flex-1" : "w-full"} flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-pink-600 text-white font-medium hover:bg-pink-700 transition`}
           >
             <FiRefreshCw size={16} /> New Quiz
           </button>

@@ -12,7 +12,7 @@ from ..services.intent import detect_intent
 from ..services.llm import get_llm
 from ..services.vectordb import vectorstore
 from ..services.memory import memory
-from ..services.reranker import rerank_documents
+from ..services.reranker import rerank_documents, rerank_documents_with_scores
 from ..services import profile as profile_svc
 from ..services.prompt import (
     build_qa_prompt,
@@ -28,6 +28,18 @@ from ..utils.logger import logger
 RETRIEVER_K = 10   # fetch this many from FAISS
 RERANK_TOP_N = 3   # keep this many after cross-encoder reranking
 FALLBACK_DOC_POOL = 40  # metadata-only fallback pool size (strictly selected PDFs/workspace)
+
+# ── Relevance threshold ──
+# If the best rerank score is below this, skip the LLM and return "I don't know".
+# Start at 0.35. Lower to 0.25 if too many valid questions blocked.
+# Raise to 0.45 if hallucination persists.
+RERANK_RELEVANCE_THRESHOLD = 0.35
+
+# Fallback response when chunks are irrelevant
+IRRELEVANT_FALLBACK = (
+    "I couldn't find relevant information in your documents to answer this. "
+    "Try rephrasing your question or make sure the correct PDFs are active."
+)
 from ..database import get_db
 from ..models import User, Conversation, Message, WorkspacePDF
 from ..auth import get_current_user
@@ -382,6 +394,51 @@ def _assign_sources_to_flashcards(flashcards: list, chunks: list) -> list:
 
 
 
+async def rewrite_query(query: str, history: List[Message]) -> str:
+    """
+    Rewrite a follow-up query into a standalone question using conversation history.
+    Uses the last 3 messages for context. Returns original query on any failure.
+    """
+    if not history:
+        return query
+
+    # Take only the last 3 messages
+    recent = history[-3:]
+    history_text = "\n".join(
+        f"{'User' if m.role == 'user' else 'Assistant'}: {m.text[:300]}"
+        for m in recent
+    )
+
+    rewrite_prompt = f"""Given the following conversation history and a follow-up question, rewrite the follow-up question as a complete standalone search query.
+
+Rules:
+- Replace pronouns like "it", "this", "that", "they" with the actual subject from the conversation
+- Include relevant keywords from context so the query works for document search
+- If the question is already standalone and clear, return it unchanged
+- Return ONLY the rewritten query, no explanation, no quotes, nothing else
+
+Conversation history:
+{history_text}
+
+Follow-up question: {query}
+
+Rewritten query:"""
+
+    try:
+        llm = get_llm()
+        result = llm.invoke(rewrite_prompt)
+        rewritten = result.content.strip() if hasattr(result, "content") else str(result).strip()
+
+        # Safety checks: return original if empty or too long
+        if not rewritten or len(rewritten) > 300:
+            return query
+
+        return rewritten
+    except Exception as e:
+        logger.warning(f"Query rewriting failed: {e} — using original query")
+        return query
+
+
 def _clean_llm_answer(answer: str) -> str:
     """
     Minimal post-processing: strip any Sources/Confidence tail the LLM wrote
@@ -526,7 +583,7 @@ def generate_flashcards_endpoint(
 #  ASK (CHAT) ENDPOINT
 # ═══════════════════════════════════════════
 @router.post("/ask")
-def ask(
+async def ask(
     req: QueryRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -553,6 +610,19 @@ def ask(
             formatted_history = (formatted_history + "\n\n[Related Past Conversations]\n" + "\n".join(similar_past)).strip()
 
     logger.info(f"Conversation {convo_id}: history lines={len(formatted_history.splitlines())}")
+
+    # ── Query rewriting for follow-up questions ─────────────────────────────
+    # Uses conversation history to expand vague follow-ups into standalone queries.
+    # The rewritten query is used ONLY for retrieval; the original query goes to the LLM.
+    search_query = req.query
+    if convo_id and formatted_history:
+        db_msgs = _load_history_from_db(convo_id, db)
+        if db_msgs:
+            search_query = await rewrite_query(req.query, db_msgs)
+            if search_query != req.query:
+                logger.info(f"Query rewritten: '{req.query}' → '{search_query}'")
+            else:
+                logger.info(f"Query unchanged (already standalone): '{req.query}'")
 
     # ── Casual / greeting short-circuit ──────────────────────────────────────
     if _is_casual_message(req.query):
@@ -584,24 +654,45 @@ def ask(
     # Get active PDFs for workspace-scoped filtering
     active_pdf_ids = _get_active_pdf_ids(req.workspace_id, req.active_pdf_ids, db) if req.workspace_id else []
 
-    # Strict filtered retrieval:
+    # Strict filtered retrieval (uses rewritten search_query + hybrid BM25+vector):
     # 1) active pdf_ids (preferred)  2) workspace_id fallback
     docs = []
     if active_pdf_ids:
-        docs = vectorstore.search_with_filter(req.query, k=RETRIEVER_K, filter_dict={"pdf_id": active_pdf_ids})
+        docs = vectorstore.hybrid_search_with_filter(search_query, k=RETRIEVER_K, filter_dict={"pdf_id": active_pdf_ids})
         if not docs:
             # Generic prompts (e.g., "key concepts") can miss in semantic stage.
             # Pull only selected-PDF chunks, then rerank.
             docs = vectorstore.get_docs_by_metadata({"pdf_id": active_pdf_ids}, k=FALLBACK_DOC_POOL)
     elif req.workspace_id:
-        docs = vectorstore.search_with_filter(req.query, k=RETRIEVER_K, filter_dict={"workspace_id": req.workspace_id})
+        docs = vectorstore.hybrid_search_with_filter(search_query, k=RETRIEVER_K, filter_dict={"workspace_id": req.workspace_id})
         if not docs:
             docs = vectorstore.get_docs_by_metadata({"workspace_id": req.workspace_id}, k=FALLBACK_DOC_POOL)
     if not docs:
         return {"answer": "No relevant content found in your active documents. Make sure PDFs are uploaded and active in the sidebar.", "sources": []}
 
-    # Cross-encoder reranking: pick the most relevant chunks
-    used_docs = rerank_documents(req.query, docs, top_n=RERANK_TOP_N)
+    # Cross-encoder reranking with score: pick the most relevant chunks
+    used_docs, best_rerank_score = rerank_documents_with_scores(search_query, docs, top_n=RERANK_TOP_N)
+
+    # ── Relevance threshold: skip LLM if chunks are irrelevant ──────────────
+    logger.info(
+        f"Rerank top score: {best_rerank_score:.4f} | threshold: {RERANK_RELEVANCE_THRESHOLD} | "
+        f"{'PASS — proceeding to LLM' if best_rerank_score >= RERANK_RELEVANCE_THRESHOLD or best_rerank_score < 0 else 'BLOCKED — returning fallback'}"
+    )
+    if 0 <= best_rerank_score < RERANK_RELEVANCE_THRESHOLD:
+        # Save the user message even when blocked so history stays complete
+        if convo_id:
+            try:
+                _save_message(db, convo_id, "user", req.query)
+                _save_message(db, convo_id, "assistant", IRRELEVANT_FALLBACK)
+            except Exception:
+                logger.exception("Failed to save fallback message")
+        return {
+            "task_type": "fallback",
+            "answer": IRRELEVANT_FALLBACK,
+            "sources": [],
+            "confidence": "Low",
+            "context_count": 0,
+        }
 
     chunks = []
     for d in used_docs:

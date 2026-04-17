@@ -151,6 +151,57 @@ Open: `http://localhost:3000`
 
 ---
 
+## Docker Setup
+
+### 1. Create backend env
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+```
+
+Then edit `backend/.env` and set:
+- `JWT_SECRET`
+- `ADMIN_PASSWORD`
+- one provider key like `GROQ_API_KEY` or `OPENAI_API_KEY`
+
+If using Ollama installed on the host machine, use:
+
+```env
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+```
+
+### 2. Start both frontend and backend
+
+```powershell
+docker compose up --build
+```
+
+Open:
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8000`
+
+### 3. Stop containers
+
+```powershell
+docker compose down
+```
+
+To also remove persisted local app data:
+
+```powershell
+docker compose down -v
+```
+
+### Notes
+
+- Frontend runs in Docker with Vite on port `3000`
+- Backend runs in Docker on port `8000`
+- Backend data persists in the `backend_data` Docker volume
+- If your friend uses cloud LLMs, they do not need Ollama installed
+
+---
+
 ## OCR Runtime Note
 
 - Image uploads use OCR (`easyocr`) to extract text from screenshots/A4 pages.

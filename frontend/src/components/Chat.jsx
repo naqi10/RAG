@@ -1,23 +1,38 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   FiSend, FiClock, FiDownload, FiPlus, FiImage, FiFileText,
-  FiBookOpen, FiCopy, FiCheck, FiChevronDown, FiUser, FiAlertCircle,
+  FiCopy, FiCheck, FiChevronDown, FiUser, FiAlertCircle,
 } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { askQuestion, getConversationMessages, exportConversation, uploadPDFToWorkspace, uploadToLibrary } from "../api/client";
 
-/* ─── AI avatar ─── */
+/* ─── AI avatar — soft feminine ─── */
 const AiIcon = () => (
-  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center shrink-0 shadow-md shadow-rose-300/40">
-    <FiBookOpen size={15} className="text-white" />
+  <div
+    className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 text-lg shadow-lg"
+    style={{
+      background: "linear-gradient(145deg, #FEC8D8 0%, #E0BBE4 55%, #FFC0CB 100%)",
+      boxShadow: "0 6px 20px rgba(224, 187, 228, 0.45), 0 0 0 2px rgba(255,255,255,0.85)",
+    }}
+    title="Study assistant"
+  >
+    <span className="leading-none" aria-hidden>
+      🌸
+    </span>
   </div>
 );
 
 /* ─── User avatar ─── */
 const UserIcon = () => (
-  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-800 to-rose-950 flex items-center justify-center shrink-0 shadow-md shadow-rose-900/40">
-    <FiUser size={15} className="text-rose-200" />
+  <div
+    className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0"
+    style={{
+      background: "linear-gradient(145deg, #FF9AA2 0%, #FFC0CB 100%)",
+      boxShadow: "0 4px 16px rgba(255, 154, 162, 0.35), 0 0 0 2px rgba(255,255,255,0.7)",
+    }}
+  >
+    <FiUser size={16} className="text-white" />
   </div>
 );
 
@@ -40,14 +55,14 @@ const SourcePill = ({ source, page }) => {
   const filename = source ? source.split(/[\\/]/).pop() : "Unknown";
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg"
-      style={{background:"rgba(244,63,94,0.12)", border:"1px solid rgba(244,63,94,0.22)", color:"#fda4af"}}
+      className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full"
+      style={{background:"rgba(255,192,203,0.35)", border:"1px solid rgba(224,187,228,0.55)", color:"#8b5a7c"}}
     >
-      <FiFileText size={11} style={{color:"#f43f5e"}} />
+      <FiFileText size={11} style={{color:"#e85d8c"}} />
       <span className="max-w-[140px] truncate">{filename}</span>
       {page && (
-        <span className="text-[9px] font-bold px-1.5 rounded-md ml-0.5"
-          style={{background:"#f43f5e", color:"white"}}>
+        <span className="text-[9px] font-bold px-1.5 rounded-full ml-0.5"
+          style={{background:"linear-gradient(135deg,#FF9AA2,#E0BBE4)", color:"white"}}>
           p.{page}
         </span>
       )}
@@ -68,12 +83,12 @@ const CopyButton = ({ text }) => {
     <button
       onClick={handleCopy}
       className="transition p-1.5 rounded-md cursor-pointer"
-      style={{color:"rgba(253,164,175,0.55)"}}
-      onMouseEnter={e => { e.currentTarget.style.background="rgba(244,63,94,0.12)"; e.currentTarget.style.color="#fda4af"; }}
-      onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(253,164,175,0.55)"; }}
+      style={{color:"rgba(184,127,168,0.55)"}}
+      onMouseEnter={e => { e.currentTarget.style.background="rgba(255,192,203,0.35)"; e.currentTarget.style.color="#b87fa8"; }}
+      onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color="rgba(184,127,168,0.55)"; }}
       title="Copy response"
     >
-      {copied ? <FiCheck size={13} style={{color:"#6ee7b7"}} /> : <FiCopy size={13} />}
+      {copied ? <FiCheck size={13} style={{color:"#059669"}} /> : <FiCopy size={13} />}
     </button>
   );
 };
@@ -83,20 +98,20 @@ const TypingIndicator = () => (
   <div className="flex items-start gap-3 msg-row">
     <AiIcon />
     <div
-      className="rounded-2xl rounded-tl-md px-5 py-4"
+      className="rounded-[1.35rem] rounded-tl-lg px-5 py-4 backdrop-blur-xl"
       style={{
-        background: "linear-gradient(145deg, rgba(40,10,25,0.96), rgba(22,5,15,0.94))",
-        border: "1px solid rgba(244,63,94,0.28)",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.50), 0 0 20px rgba(244,63,94,0.06)",
+        background: "linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,240,248,0.55))",
+        border: "1px solid rgba(255,255,255,0.85)",
+        boxShadow: "0 8px 32px rgba(224,187,228,0.25), 0 0 0 1px rgba(255,192,203,0.2)",
       }}
     >
       <div className="flex items-center gap-2">
         <div className="flex gap-1.5">
-          <span className="typing-dot w-2 h-2 rounded-full" style={{background:"#f43f5e", animationDelay:"0ms"}} />
-          <span className="typing-dot w-2 h-2 rounded-full" style={{background:"#fb7185", animationDelay:"180ms"}} />
-          <span className="typing-dot w-2 h-2 rounded-full" style={{background:"#fda4af", animationDelay:"360ms"}} />
+          <span className="typing-dot w-2 h-2 rounded-full" style={{background:"#FF9AA2", animationDelay:"0ms"}} />
+          <span className="typing-dot w-2 h-2 rounded-full" style={{background:"#E0BBE4", animationDelay:"180ms"}} />
+          <span className="typing-dot w-2 h-2 rounded-full" style={{background:"#FFC0CB", animationDelay:"360ms"}} />
         </div>
-        <span className="text-xs ml-1" style={{color:"rgba(253,164,175,0.65)"}}>Reading your document...</span>
+        <span className="text-xs ml-1 tracking-wide" style={{color:"rgba(139,90,124,0.75)"}}>✨ Reading your docs…</span>
       </div>
     </div>
   </div>
@@ -323,93 +338,68 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
     }).slice(0, 4);
   };
 
-  // ── Aurora background style ──
-  const auroraStyle = {
-    background: `
-      radial-gradient(ellipse 90% 55% at 10% 10%, rgba(244,63,94,0.13) 0%, transparent 55%),
-      radial-gradient(ellipse 70% 60% at 90% 85%, rgba(168,85,247,0.10) 0%, transparent 55%),
-      radial-gradient(ellipse 55% 45% at 75% 20%, rgba(236,72,153,0.09) 0%, transparent 50%),
-      radial-gradient(ellipse 50% 50% at 30% 75%, rgba(251,113,133,0.07) 0%, transparent 55%),
-      radial-gradient(ellipse 80% 80% at 50% 50%, rgba(15,3,20,0) 0%, transparent 100%),
-      #07040d
-    `,
-  };
-
   return (
-    <div className="flex flex-col h-full relative overflow-hidden" style={auroraStyle}>
-
-      {/* Subtle noise/grain texture overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none z-0 opacity-[0.025]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
-        }}
-      />
+    <div className="flex flex-col h-full min-h-0 relative z-10 px-2 sm:px-4 py-3">
+      <div className="relative flex-1 flex flex-col min-h-0 max-w-3xl w-full mx-auto dreamy-chat-shell rounded-[2rem] overflow-hidden">
 
       {/* ═══ Header ═══ */}
       <div
-        className="relative z-10 flex items-center justify-between px-6 py-3"
+        className="flex items-center justify-between px-4 sm:px-5 py-3 shrink-0"
         style={{
-          background: "rgba(10,5,18,0.55)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(244,63,94,0.12)",
-          boxShadow: "0 1px 0 rgba(244,63,94,0.06)",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,248,252,0.35))",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderBottom: "1px solid rgba(255,255,255,0.65)",
         }}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" style={{boxShadow: "0 0 8px rgba(244,63,94,0.8)"}} />
-          <h2 className="text-sm font-semibold text-rose-100 truncate max-w-[180px]">
+        <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+          <span className="text-sm" aria-hidden>💕</span>
+          <div className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{background:"#FF9AA2", boxShadow:"0 0 10px rgba(255,154,162,0.9)"}} />
+          <h2 className="text-sm font-semibold tracking-wide truncate max-w-[160px] sm:max-w-[200px]" style={{color:"#6b4a63"}}>
             {convoTitle || "Chat"}
           </h2>
           {activePdfs.length > 0 && (
             <div className="flex items-center gap-1.5 overflow-hidden">
-              <div className="h-4 w-px bg-rose-900/60" />
+              <div className="h-4 w-px bg-[#E0BBE4]/80" />
               {activePdfs.slice(0, 2).map((p, i) => (
-                <span key={i} className="inline-flex items-center gap-1 text-[10px] text-rose-300 px-2 py-0.5 rounded-full truncate max-w-[120px]"
-                  style={{background:"rgba(244,63,94,0.12)", border:"1px solid rgba(244,63,94,0.22)"}}>
+                <span key={i} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full truncate max-w-[120px]"
+                  style={{background:"rgba(255,192,203,0.35)", border:"1px solid rgba(224,187,228,0.5)", color:"#8b5a7c"}}>
                   <FiFileText size={10} />
                   {p.display_name || p.filename}
                 </span>
               ))}
               {activePdfs.length > 2 && (
-                <span className="text-[10px] text-rose-500">+{activePdfs.length - 2}</span>
+                <span className="text-[10px]" style={{color:"#c77b9e"}}>+{activePdfs.length - 2}</span>
               )}
             </div>
           )}
           {activePdfs.length === 0 && pendingActiveName && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-rose-300 px-2 py-0.5 rounded-full max-w-[220px] truncate"
-              style={{background:"rgba(244,63,94,0.12)", border:"1px solid rgba(244,63,94,0.20)"}}>
-              <FiFileText size={10} /> {pendingActiveName} active
+            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full max-w-[200px] truncate"
+              style={{background:"rgba(255,192,203,0.35)", border:"1px solid rgba(224,187,228,0.45)", color:"#8b5a7c"}}>
+              <FiFileText size={10} /> {pendingActiveName}
             </span>
           )}
           {activePdfs.length === 0 && !pendingActiveName && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-amber-300 px-2 py-0.5 rounded-full"
-              style={{background:"rgba(251,191,36,0.10)", border:"1px solid rgba(251,191,36,0.22)"}}>
-              <FiAlertCircle size={10} /> No PDF selected
+            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+              style={{background:"rgba(254,243,199,0.6)", border:"1px solid rgba(251,191,36,0.35)", color:"#a16207"}}>
+              <FiAlertCircle size={10} /> No PDF yet
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 shrink-0">
           {messages.length > 0 && (
             <>
               <button
                 onClick={() => handleExport("json")}
-                className="flex items-center gap-1 text-[11px] text-rose-500 hover:text-rose-300 px-2 py-1 rounded-lg transition cursor-pointer"
-                style={{background:"transparent"}}
-                onMouseEnter={e => e.currentTarget.style.background="rgba(244,63,94,0.10)"}
-                onMouseLeave={e => e.currentTarget.style.background="transparent"}
+                className="dreamy-btn-glow flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-full cursor-pointer"
+                style={{background:"rgba(255,255,255,0.5)", border:"1px solid rgba(224,187,228,0.55)", color:"#b87fa8"}}
               >
                 <FiDownload size={12} /> JSON
               </button>
               <button
                 onClick={() => handleExport("txt")}
-                className="flex items-center gap-1 text-[11px] text-rose-500 hover:text-rose-300 px-2 py-1 rounded-lg transition cursor-pointer"
-                style={{background:"transparent"}}
-                onMouseEnter={e => e.currentTarget.style.background="rgba(244,63,94,0.10)"}
-                onMouseLeave={e => e.currentTarget.style.background="transparent"}
+                className="dreamy-btn-glow flex items-center gap-1 text-[11px] px-2.5 py-1.5 rounded-full cursor-pointer"
+                style={{background:"rgba(255,255,255,0.5)", border:"1px solid rgba(224,187,228,0.55)", color:"#b87fa8"}}
               >
                 <FiDownload size={12} /> TXT
               </button>
@@ -422,15 +412,15 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
       <div
         ref={scrollAreaRef}
         onScroll={handleScroll}
-        className="relative z-10 flex-1 overflow-y-auto chat-scroll px-4 sm:px-6 py-6 space-y-6"
-        style={{scrollbarColor: "rgba(244,63,94,0.2) transparent"}}
+        className="flex-1 overflow-y-auto chat-scroll px-4 sm:px-5 py-5 space-y-5 min-h-0"
+        style={{scrollbarColor: "rgba(224,187,228,0.5) transparent"}}
       >
         {/* Creating new chat spinner */}
         {conversationId?.startsWith("temp-") && (
           <div className="flex items-center justify-center h-full">
-            <div className="flex items-center gap-3" style={{color:"rgba(251,113,133,0.5)"}}>
-              <div className="w-4 h-4 rounded-full border-2 border-rose-500/30 border-t-rose-400 animate-spin" />
-              <span className="text-sm">Creating chat...</span>
+            <div className="flex items-center gap-3" style={{color:"rgba(184,127,168,0.75)"}}>
+              <div className="w-4 h-4 rounded-full border-2 border-[#FEC8D8] border-t-[#FF9AA2] animate-spin" />
+              <span className="text-sm tracking-wide">✨ Creating your chat…</span>
             </div>
           </div>
         )}
@@ -445,45 +435,44 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
 
             {/* Icon + heading */}
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+              className="w-16 h-16 rounded-[1.25rem] flex items-center justify-center mb-3 text-3xl"
               style={{
-                background: "linear-gradient(135deg, #f43f5e, #e11d48)",
-                boxShadow: "0 0 40px rgba(244,63,94,0.35), 0 8px 32px rgba(0,0,0,0.4)",
+                background: "linear-gradient(135deg, #FEC8D8, #E0BBE4, #FFC0CB)",
+                boxShadow: "0 12px 40px rgba(224,187,228,0.45), 0 0 0 3px rgba(255,255,255,0.85)",
               }}
             >
-              <FiBookOpen size={26} className="text-white" />
+              🌷
             </div>
 
             {activePdfs.length > 0 ? (
               <>
-                <h3 className="text-base font-semibold text-rose-100 mb-1">
+                <h3 className="text-base font-semibold mb-1 tracking-wide" style={{color:"#6b4a63"}}>
                   {activePdfs.length === 1
                     ? `Ready — ${activePdfs[0].display_name || activePdfs[0].filename}`
-                    : `${activePdfs.length} documents loaded`}
+                    : `${activePdfs.length} documents loaded 💕`}
                 </h3>
-                <p className="text-xs mb-6" style={{color:"rgba(251,113,133,0.55)"}}>
-                  Pick a prompt below or type your own question
+                <p className="text-xs mb-6" style={{color:"rgba(139,90,124,0.65)"}}>
+                  Pick a sparkly prompt or type your own ✨
                 </p>
 
-                {/* PDF action suggestions — 2 cols grid */}
                 <div className="grid grid-cols-2 gap-2 w-full max-w-xl mb-4">
                   {PDF_SUGGESTIONS.map((sq, i) => (
                     <button
                       key={i}
                       onClick={() => send(sq.text)}
-                      className="flex items-center gap-2.5 text-left px-3.5 py-3 rounded-xl text-[13px] text-rose-200 transition-all cursor-pointer group"
+                      className="dreamy-btn-glow flex items-center gap-2.5 text-left px-3.5 py-3 rounded-2xl text-[13px] transition-all cursor-pointer"
                       style={{
-                        background: "rgba(244,63,94,0.07)",
-                        border: "1px solid rgba(244,63,94,0.14)",
+                        background: "rgba(255,255,255,0.55)",
+                        border: "1px solid rgba(255,255,255,0.85)",
+                        color: "#6b4a63",
+                        boxShadow: "0 4px 20px rgba(224,187,228,0.2)",
                       }}
                       onMouseEnter={e => {
-                        e.currentTarget.style.background = "rgba(244,63,94,0.14)";
-                        e.currentTarget.style.border = "1px solid rgba(244,63,94,0.30)";
-                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.background = "rgba(255,255,255,0.85)";
+                        e.currentTarget.style.transform = "translateY(-2px)";
                       }}
                       onMouseLeave={e => {
-                        e.currentTarget.style.background = "rgba(244,63,94,0.07)";
-                        e.currentTarget.style.border = "1px solid rgba(244,63,94,0.14)";
+                        e.currentTarget.style.background = "rgba(255,255,255,0.55)";
                         e.currentTarget.style.transform = "";
                       }}
                     >
@@ -493,13 +482,12 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
                   ))}
                 </div>
 
-                {/* Active PDF chips */}
                 <div className="flex flex-wrap gap-1.5 justify-center mt-1">
                   {activePdfs.map((p, i) => (
                     <span
                       key={i}
                       className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full"
-                      style={{background:"rgba(244,63,94,0.10)", border:"1px solid rgba(244,63,94,0.20)", color:"#fda4af"}}
+                      style={{background:"rgba(255,192,203,0.4)", border:"1px solid rgba(224,187,228,0.55)", color:"#8b5a7c"}}
                     >
                       <FiFileText size={9} />
                       {p.display_name || p.filename}
@@ -509,37 +497,35 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
               </>
             ) : (
               <>
-                <h3 className="text-base font-semibold text-rose-100 mb-1">Start a conversation</h3>
-                <p className="text-xs mb-6" style={{color:"rgba(251,113,133,0.55)"}}>
-                  Upload a PDF or image using the <strong style={{color:"#f43f5e"}}>+</strong> button, then ask anything
+                <h3 className="text-base font-semibold mb-1 tracking-wide" style={{color:"#6b4a63"}}>Hi, lovely 💗</h3>
+                <p className="text-xs mb-6" style={{color:"rgba(139,90,124,0.65)"}}>
+                  Tap the <strong style={{color:"#e85d8c"}}>+</strong> to upload a PDF or image, then ask anything
                 </p>
 
-                {/* Upload hint cards */}
                 <div className="grid grid-cols-1 gap-2 w-full max-w-sm mb-6">
                   <div
-                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px]"
-                    style={{background:"rgba(244,63,94,0.06)", border:"1px dashed rgba(244,63,94,0.20)"}}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] backdrop-blur-sm"
+                    style={{background:"rgba(255,255,255,0.45)", border:"1px dashed rgba(224,187,228,0.65)"}}
                   >
                     <span className="text-lg">📄</span>
                     <div>
-                      <p className="text-rose-200 font-medium">Upload a PDF</p>
-                      <p className="text-[11px]" style={{color:"rgba(251,113,133,0.45)"}}>Click the + button in the input bar below</p>
+                      <p className="font-medium" style={{color:"#6b4a63"}}>Upload a PDF</p>
+                      <p className="text-[11px]" style={{color:"rgba(139,90,124,0.55)"}}>Use the + button in the bar below</p>
                     </div>
                   </div>
                   <div
-                    className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px]"
-                    style={{background:"rgba(244,63,94,0.06)", border:"1px dashed rgba(244,63,94,0.20)"}}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] backdrop-blur-sm"
+                    style={{background:"rgba(255,255,255,0.45)", border:"1px dashed rgba(224,187,228,0.65)"}}
                   >
                     <span className="text-lg">🖼️</span>
                     <div>
-                      <p className="text-rose-200 font-medium">Upload an Image</p>
-                      <p className="text-[11px]" style={{color:"rgba(251,113,133,0.45)"}}>OCR will extract the text automatically</p>
+                      <p className="font-medium" style={{color:"#6b4a63"}}>Upload an image</p>
+                      <p className="text-[11px]" style={{color:"rgba(139,90,124,0.55)"}}>OCR reads the text for you</p>
                     </div>
                   </div>
                 </div>
 
-                {/* General questions (no PDF needed) */}
-                <p className="text-[11px] mb-3" style={{color:"rgba(251,113,133,0.35)"}}>Or just say hello and start chatting</p>
+                <p className="text-[11px] mb-3" style={{color:"rgba(139,90,124,0.45)"}}>Or say hi to start chatting</p>
                 <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
                   {[
                     { icon: "👋", text: "Hey, what can you do?" },
@@ -548,10 +534,10 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
                     <button
                       key={i}
                       onClick={() => send(sq.text)}
-                      className="flex items-center gap-2 text-left px-3 py-2.5 rounded-xl text-[12px] text-rose-300 transition-all"
-                      style={{background:"rgba(244,63,94,0.06)", border:"1px solid rgba(244,63,94,0.12)"}}
-                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(244,63,94,0.12)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(244,63,94,0.06)"; }}
+                      className="dreamy-btn-glow flex items-center gap-2 text-left px-3 py-2.5 rounded-2xl text-[12px] transition-all"
+                      style={{background:"rgba(255,255,255,0.5)", border:"1px solid rgba(255,192,203,0.45)", color:"#8b5a7c"}}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.85)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.5)"; }}
                     >
                       <span>{sq.icon}</span>
                       <span>{sq.text}</span>
@@ -570,8 +556,8 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
             /* ─── Upload confirmation — compact banner, not a full bubble ─── */
             <div key={i} className="flex justify-center msg-row">
               <div
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px]"
-                style={{background:"rgba(16,185,129,0.10)", border:"1px solid rgba(16,185,129,0.22)", color:"#6ee7b7"}}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] backdrop-blur-sm"
+                style={{background:"rgba(167,243,208,0.35)", border:"1px solid rgba(52,211,153,0.45)", color:"#047857"}}
               >
                 <FiCheck size={12} />
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={{p: ({children}) => <span>{children}</span>}}>
@@ -586,16 +572,16 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
             <div key={i} className="flex items-start gap-3 justify-end msg-row">
               <div className="max-w-[70%] msg-user">
                 <div
-                  className="user-bubble text-white rounded-3xl rounded-tr-lg px-5 py-3.5"
+                  className="user-bubble text-white rounded-[1.35rem] rounded-tr-md px-5 py-3.5"
                   style={{
-                    background: "linear-gradient(135deg, #e11d48 0%, #9f1239 100%)",
-                    boxShadow: "0 4px 18px rgba(190,18,60,0.35), 0 0 0 1px rgba(244,63,94,0.15)",
+                    background: "linear-gradient(135deg, #FF9AA2 0%, #FFC0CB 45%, #FEC8D8 100%)",
+                    boxShadow: "0 8px 28px rgba(255,154,162,0.4), 0 0 0 1px rgba(255,255,255,0.5)",
                   }}
                 >
-                  <span className="text-sm leading-relaxed whitespace-pre-wrap" style={{color:"#ffe4e8"}}>{msg.text}</span>
+                  <span className="text-sm leading-relaxed whitespace-pre-wrap font-medium" style={{color:"#fff", textShadow:"0 1px 8px rgba(199,72,120,0.25)"}}>{msg.text}</span>
                 </div>
                 {msg.ts && (
-                  <div className="mt-1.5 text-[10px] flex items-center gap-1 justify-end pr-1" style={{color:"rgba(251,113,133,0.35)"}}>
+                  <div className="mt-1.5 text-[10px] flex items-center gap-1 justify-end pr-1" style={{color:"rgba(139,90,124,0.45)"}}>
                     <FiClock size={9} /> {formatTime(msg.ts)}
                   </div>
                 )}
@@ -609,13 +595,13 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
             <div key={i} className="flex items-start gap-3 msg-row">
               <AiIcon />
               <div className="max-w-[75%] msg-ai">
-                <div className="rounded-2xl rounded-tl-md px-5 py-3.5"
-                  style={{background:"rgba(239,68,68,0.10)", border:"1px solid rgba(239,68,68,0.25)"}}>
+                <div className="rounded-[1.25rem] rounded-tl-md px-5 py-3.5 backdrop-blur-md"
+                  style={{background:"rgba(254,202,202,0.45)", border:"1px solid rgba(248,113,113,0.35)"}}>
                   <div className="flex items-center gap-2 mb-1">
-                    <FiAlertCircle size={14} style={{color:"#fca5a5"}} />
-                    <span className="text-xs font-semibold" style={{color:"#fca5a5"}}>Error</span>
+                    <FiAlertCircle size={14} style={{color:"#b91c1c"}} />
+                    <span className="text-xs font-semibold" style={{color:"#b91c1c"}}>Oops</span>
                   </div>
-                  <span className="text-sm" style={{color:"rgba(252,165,165,0.85)"}}>{msg.text}</span>
+                  <span className="text-sm" style={{color:"#7f1d1d"}}>{msg.text}</span>
                 </div>
               </div>
             </div>
@@ -626,12 +612,11 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
             <div key={i} className="flex items-start gap-3 msg-row">
               <AiIcon />
               <div className="max-w-[80%] msg-ai">
-                {/* Dark glass card — visible & stunning on dark bg */}
                 <div
-                  className="ai-bubble rounded-3xl rounded-tl-lg overflow-hidden"
+                  className="ai-bubble rounded-[1.35rem] rounded-tl-lg overflow-hidden backdrop-blur-xl"
                   style={{
-                    background: "linear-gradient(145deg, rgba(42,10,26,0.97) 0%, rgba(22,5,15,0.95) 100%)",
-                    border: "1px solid rgba(244,63,94,0.22)",
+                    background: "linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(255,248,252,0.72) 50%, rgba(255,236,245,0.65) 100%)",
+                    border: "1px solid rgba(255,255,255,0.9)",
                   }}
                 >
                   {/* Shimmer gradient top bar */}
@@ -648,9 +633,9 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
                   {getUniqueSources(msg.sources).length > 0 && (
                     <div
                       className="px-5 pb-3 pt-2 flex flex-wrap items-center gap-1.5"
-                      style={{borderTop: "1px solid rgba(244,63,94,0.12)"}}
+                      style={{borderTop: "1px solid rgba(255,192,203,0.35)"}}
                     >
-                      <span className="text-[10px] font-medium mr-0.5" style={{color:"rgba(253,164,175,0.50)"}}>Pages cited:</span>
+                      <span className="text-[10px] font-medium mr-0.5" style={{color:"rgba(139,90,124,0.55)"}}>📎 Pages cited:</span>
                       {getUniqueSources(msg.sources).map((s, j) => (
                         <SourcePill key={j} source={s.source} page={s.page} />
                       ))}
@@ -660,13 +645,13 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
                   {/* Footer bar */}
                   <div
                     className="flex items-center justify-between px-5 py-2"
-                    style={{ background:"rgba(244,63,94,0.05)", borderTop:"1px solid rgba(244,63,94,0.10)" }}
+                    style={{ background:"rgba(255,192,203,0.12)", borderTop:"1px solid rgba(224,187,228,0.35)" }}
                   >
                     <div className="flex items-center gap-2">
                       {msg.confidence && <ConfidenceBadge level={msg.confidence} />}
                       {msg.task_type && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full"
-                          style={{background:"rgba(244,63,94,0.10)", color:"rgba(253,164,175,0.65)", border:"1px solid rgba(244,63,94,0.15)"}}>
+                          style={{background:"rgba(255,255,255,0.65)", color:"#8b5a7c", border:"1px solid rgba(224,187,228,0.5)"}}>
                           {msg.task_type}
                         </span>
                       )}
@@ -674,7 +659,7 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
                     <div className="flex items-center gap-1.5">
                       <CopyButton text={cleanAnswer(msg.text)} />
                       {msg.ts && (
-                        <span className="text-[10px] flex items-center gap-1" style={{color:"rgba(253,164,175,0.35)"}}>
+                        <span className="text-[10px] flex items-center gap-1" style={{color:"rgba(139,90,124,0.4)"}}>
                           <FiClock size={9} /> {formatTime(msg.ts)}
                         </span>
                       )}
@@ -694,13 +679,13 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
       {showScrollBtn && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-28 left-1/2 -translate-x-1/2 p-2 rounded-full transition z-20 cursor-pointer"
+          className="dreamy-btn-glow absolute bottom-[5.5rem] sm:bottom-[5rem] left-1/2 -translate-x-1/2 p-2.5 rounded-full z-20 cursor-pointer"
           style={{
-            background: "rgba(244,63,94,0.18)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid rgba(244,63,94,0.30)",
-            boxShadow: "0 4px 20px rgba(244,63,94,0.20)",
-            color: "#fda4af",
+            background: "rgba(255,255,255,0.75)",
+            backdropFilter: "blur(14px)",
+            border: "1px solid rgba(224,187,228,0.65)",
+            boxShadow: "0 8px 28px rgba(224,187,228,0.35)",
+            color: "#b87fa8",
           }}
         >
           <FiChevronDown size={18} />
@@ -709,47 +694,40 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
 
       {/* ═══ Input ═══ */}
       <div
-        className="relative z-10 px-4 sm:px-6 py-4"
+        className="relative z-10 px-4 sm:px-5 py-3.5 shrink-0"
         style={{
-          background: "rgba(8,4,14,0.65)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          borderTop: "1px solid rgba(244,63,94,0.10)",
+          background: "linear-gradient(180deg, rgba(255,252,254,0.5), rgba(255,248,252,0.75))",
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+          borderTop: "1px solid rgba(255,255,255,0.85)",
         }}
       >
-        <div className="flex items-end gap-2.5 max-w-3xl mx-auto relative">
+        <div className="flex items-end gap-2.5 mx-auto relative">
           {/* Upload button */}
           <div className="relative">
             <button
               onClick={() => setShowUploadMenu((v) => !v)}
-              className="w-11 h-11 rounded-2xl flex items-center justify-center transition cursor-pointer"
+              className="dreamy-btn-glow w-11 h-11 rounded-2xl flex items-center justify-center cursor-pointer"
               title="Upload PDF / Image"
               style={{
-                background: "rgba(244,63,94,0.09)",
-                border: "1px solid rgba(244,63,94,0.18)",
-                color: "#fb7185",
+                background: "rgba(255,255,255,0.7)",
+                border: "1px solid rgba(224,187,228,0.55)",
+                color: "#e85d8c",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background="rgba(244,63,94,0.16)"; e.currentTarget.style.borderColor="rgba(244,63,94,0.30)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background="rgba(244,63,94,0.09)"; e.currentTarget.style.borderColor="rgba(244,63,94,0.18)"; }}
             >
               <FiPlus size={18} />
             </button>
             {showUploadMenu && (
-              <div className="absolute left-0 bottom-14 w-72 rounded-2xl shadow-2xl p-3 z-30"
-                style={{
-                  background: "rgba(15,8,25,0.92)",
-                  backdropFilter: "blur(20px)",
-                  border: "1px solid rgba(244,63,94,0.18)",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(244,63,94,0.08)",
-                }}>
+              <div className="absolute left-0 bottom-14 w-72 rounded-2xl p-3 z-30 dreamy-glass-card-strong"
+                style={{ boxShadow: "0 24px 48px rgba(224,187,228,0.35)" }}>
                 <button
                   onClick={handlePickAsset}
                   disabled={uploadingAsset}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-white text-xs font-medium disabled:opacity-60 transition"
-                  style={{background:"linear-gradient(135deg,#f43f5e,#e11d48)"}}
+                  className="dreamy-btn-glow w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-white text-xs font-semibold disabled:opacity-60 tracking-wide"
+                  style={{background:"linear-gradient(135deg,#FF9AA2,#E0BBE4)"}}
                 >
                   <FiImage size={13} />
-                  {uploadingAsset ? "Uploading..." : "Choose PDF / Image"}
+                  {uploadingAsset ? "Uploading…" : "Choose PDF / Image ✨"}
                 </button>
                 <input
                   ref={uploadInputRef}
@@ -764,12 +742,12 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
                   placeholder="Tags (optional)"
                   className="mt-2 w-full text-xs px-3 py-2 rounded-xl outline-none transition"
                   style={{
-                    background:"rgba(244,63,94,0.07)",
-                    border:"1px solid rgba(244,63,94,0.15)",
-                    color:"#fda4af",
+                    background:"rgba(255,255,255,0.65)",
+                    border:"1px solid rgba(224,187,228,0.45)",
+                    color:"#6b4a63",
                   }}
                 />
-                <p className="mt-1 text-[10px]" style={{color:"rgba(251,113,133,0.40)"}}>Upload directly from chat.</p>
+                <p className="mt-1 text-[10px]" style={{color:"rgba(139,90,124,0.5)"}}>Upload right from this chat 💕</p>
               </div>
             )}
           </div>
@@ -785,18 +763,18 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
                 e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
               }}
               onKeyDown={handleKey}
-              placeholder="Ask about your PDF..."
-              className="w-full resize-none rounded-2xl px-5 py-3 pr-12 text-sm outline-none transition"
+              placeholder="Ask about your PDF… 💭"
+              className="w-full resize-none rounded-2xl px-5 py-3 pr-12 text-sm outline-none transition shadow-sm"
               style={{
                 minHeight: 44,
                 maxHeight: 120,
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(244,63,94,0.18)",
-                color: "#ffe4e6",
-                caretColor: "#f43f5e",
+                background: "rgba(255,255,255,0.85)",
+                border: "1px solid rgba(224,187,228,0.45)",
+                color: "#4a3d4f",
+                caretColor: "#e85d8c",
               }}
-              onFocus={e => { e.currentTarget.style.border="1px solid rgba(244,63,94,0.45)"; e.currentTarget.style.boxShadow="0 0 0 3px rgba(244,63,94,0.08), 0 0 20px rgba(244,63,94,0.05)"; }}
-              onBlur={e => { e.currentTarget.style.border="1px solid rgba(244,63,94,0.18)"; e.currentTarget.style.boxShadow=""; }}
+              onFocus={e => { e.currentTarget.style.border="1px solid rgba(255,154,162,0.75)"; e.currentTarget.style.boxShadow="0 0 0 3px rgba(255,192,203,0.45), 0 0 28px rgba(224,187,228,0.35)"; }}
+              onBlur={e => { e.currentTarget.style.border="1px solid rgba(224,187,228,0.45)"; e.currentTarget.style.boxShadow=""; }}
             />
           </div>
 
@@ -804,20 +782,19 @@ export default function Chat({ conversationId, convoTitle, workspaceId, activePd
           <button
             onClick={() => send()}
             disabled={loading || !input.trim()}
-            className="p-3 rounded-2xl text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0"
+            className="dreamy-btn-glow p-3 rounded-2xl text-white disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer shrink-0"
             style={{
-              background: "linear-gradient(135deg, #f43f5e, #be123c)",
-              boxShadow: "0 4px 20px rgba(244,63,94,0.35)",
+              background: "linear-gradient(135deg, #FF9AA2 0%, #FFC0CB 40%, #E0BBE4 100%)",
+              boxShadow: "0 6px 24px rgba(255,154,162,0.45)",
             }}
-            onMouseEnter={e => !e.currentTarget.disabled && (e.currentTarget.style.boxShadow="0 6px 28px rgba(244,63,94,0.50)")}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow="0 4px 20px rgba(244,63,94,0.35)")}
           >
             <FiSend size={18} />
           </button>
         </div>
-        <p className="text-center text-[10px] mt-2" style={{color:"rgba(251,113,133,0.30)"}}>
-          Answers are grounded in your uploaded PDFs · Always verify important information
+        <p className="text-center text-[10px] mt-2 tracking-wide" style={{color:"rgba(139,90,124,0.4)"}}>
+          💗 Grounded in your PDFs · Double-check anything important
         </p>
+      </div>
       </div>
     </div>
   );

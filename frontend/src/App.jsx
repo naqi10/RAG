@@ -11,6 +11,7 @@ import PDFNotes from "./components/PDFNotes";
 import MindMap from "./components/MindMap";
 import Settings from "./components/Settings";
 import History from "./components/History";
+import DreamyBackground from "./components/DreamyBackground";
 import {
   getLibraryPDFs, toggleLibraryPDF, removeLibraryPDF,
   getLibraryConversations, createLibraryConversation,
@@ -18,12 +19,30 @@ import {
 } from "./api/client";
 
 // ── Session persistence helpers ──────────────────────────────────────────────
+const _try = (fn) => { try { fn(); } catch { /* ignore */ } };
 const SS = {
   get: (key, fallback = null) => { try { return sessionStorage.getItem(key) ?? fallback; } catch { return fallback; } },
-  set: (key, val) => { try { sessionStorage.setItem(key, val ?? ""); } catch {} },
-  del: (key) => { try { sessionStorage.removeItem(key); } catch {} },
-  clear: () => { try { sessionStorage.removeItem("tab"); sessionStorage.removeItem("convoId"); } catch {} },
+  set: (key, val) => _try(() => sessionStorage.setItem(key, val ?? "")),
+  del: (key) => _try(() => sessionStorage.removeItem(key)),
+  clear: () => _try(() => { sessionStorage.removeItem("tab"); sessionStorage.removeItem("convoId"); }),
 };
+
+/* Auto-create a new chat when user lands on chat tab with no active conversation */
+function AutoCreateChat({ onCreate }) {
+  const triggered = useRef(false);
+  useEffect(() => {
+    if (!triggered.current) {
+      triggered.current = true;
+      onCreate();
+    }
+  }, [onCreate]);
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[50vh] select-none px-6">
+      <div className="w-11 h-11 border-[3px] border-[#FEC8D8] border-t-[#FF9AA2] rounded-full animate-spin" />
+      <p className="mt-3 text-sm tracking-wide" style={{ color: "rgba(107,74,99,0.7)" }}>Starting a fresh chat… ✨</p>
+    </div>
+  );
+}
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -70,17 +89,24 @@ function AppContent() {
   useEffect(() => {
     if (!user || initialised.current) return;
     initialised.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     Promise.all([fetchPdfs(false), fetchConversations()]);
   }, [user, fetchPdfs, fetchConversations]);
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchPdfs(false);
+       
       fetchConversations();
     } else {
+       
       setPdfs([]);
+       
       setConversations([]);
+       
       setActiveConvoId(null);
+       
       setActiveWsId(null);
       SS.clear();
     }
@@ -90,7 +116,9 @@ function AppContent() {
   useEffect(() => {
     if (!activeWsId || conversations.length === 0) return;
     if (tab === "chat" && activeConvoId && !conversations.find((c) => c.id === activeConvoId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveConvoId(null);
+       
       setTab("dashboard");
     }
   }, [activeWsId, conversations, tab, activeConvoId, setActiveConvoId, setTab]);
@@ -171,8 +199,12 @@ function AppContent() {
   // ── Render ────────────────────────────────────────────────────────────────
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#FAFAFA]">
-        <div className="w-10 h-10 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
+      <div className="relative flex items-center justify-center h-screen overflow-hidden">
+        <DreamyBackground />
+        <div className="relative z-10 flex flex-col items-center gap-3">
+          <div className="w-11 h-11 border-[3px] border-[#FEC8D8] border-t-[#FF9AA2] rounded-full animate-spin" />
+          <p className="text-sm tracking-wide" style={{ color: "rgba(107,74,99,0.7)" }}>Loading your space… ✨</p>
+        </div>
       </div>
     );
   }
@@ -182,7 +214,8 @@ function AppContent() {
   const needsWorkspace = !activeWsId && !["dashboard", "admin", "settings"].includes(tab);
 
   return (
-    <div className="flex h-screen bg-[#FAFAFA] font-sans text-gray-800 antialiased">
+    <div className="relative flex h-screen overflow-hidden antialiased text-[#4a3d4f]">
+      <DreamyBackground />
       <Sidebar
         active={tab}
         onSelect={setTab}
@@ -204,7 +237,7 @@ function AppContent() {
         hideWorkspaceUI
       />
 
-      <main className="flex-1 min-w-0 overflow-y-auto">
+      <main className="relative z-10 flex-1 min-w-0 min-h-0 overflow-y-auto flex flex-col">
         {tab === "dashboard" && (
           <Dashboard
             user={user}
@@ -221,16 +254,17 @@ function AppContent() {
         {tab === "settings" && <Settings />}
 
         {needsWorkspace && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 select-none">
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-              <div className="w-8 h-8 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center min-h-[50vh] select-none px-6">
+            <div className="w-16 h-16 rounded-2xl dreamy-glass-card flex items-center justify-center mb-4">
+              <div className="w-8 h-8 border-[3px] border-[#FEC8D8] border-t-[#FF9AA2] rounded-full animate-spin" />
             </div>
-            <p className="text-sm mb-4">Preparing your personal study space...</p>
+            <p className="text-sm mb-1 tracking-wide" style={{ color: "rgba(107,74,99,0.75)" }}>Preparing your study space…</p>
+            <span className="text-lg" aria-hidden>🌸</span>
           </div>
         )}
 
         {tab === "chat" && activeWsId && (
-          <div className="h-full">
+          <div className="flex-1 min-h-0 flex flex-col h-full">
             {activeConvoId ? (
               <Chat
                 conversationId={activeConvoId}
@@ -242,18 +276,7 @@ function AppContent() {
                 onTitleChanged={fetchConversations}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 select-none">
-                <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                  <span className="text-2xl">💬</span>
-                </div>
-                <p className="text-sm mb-4">Start a conversation</p>
-                <button
-                  onClick={handleNewConvo}
-                  className="px-4 py-2.5 rounded-xl bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 transition"
-                >
-                  + New Chat
-                </button>
-              </div>
+              <AutoCreateChat onCreate={handleNewConvo} />
             )}
           </div>
         )}
@@ -263,6 +286,7 @@ function AppContent() {
             conversations={conversations}
             activeConvoId={activeConvoId}
             onOpenChat={(id) => { setActiveConvoId(id); setTab("chat"); }}
+            onDeleteChat={handleDeleteConvo}
           />
         )}
 

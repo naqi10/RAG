@@ -66,11 +66,17 @@ export default function AdminPanel({ onBack }) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-white">
-        <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+      <div
+        className="flex items-center gap-3 px-6 py-4 border-b border-white/65 shrink-0"
+        style={{
+          background: "rgba(255,255,255,0.42)",
+          backdropFilter: "blur(18px)",
+        }}
+      >
+        <button onClick={onBack} className="p-1.5 rounded-xl hover:bg-white/50 transition cursor-pointer text-[#8b5a7c]">
           <FiArrowLeft size={18} />
         </button>
-        <h2 className="text-sm font-semibold text-gray-700">User Management</h2>
+        <h2 className="text-sm font-semibold text-[#6b4a63] tracking-wide">User Management ✨</h2>
         <span className="text-[10px] bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full ml-auto">
           {activeNonAdmin}/{maxUsers} users
         </span>
@@ -83,7 +89,7 @@ export default function AdminPanel({ onBack }) {
           </div>
         )}
         {success && (
-          <div className="mb-4 flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-4 py-2.5 rounded-xl">
+          <div className="mb-4 flex items-center gap-2 text-sm text-pink-600 bg-pink-50 px-4 py-2.5 rounded-xl">
             <FiCheck size={14} /> {success}
           </div>
         )}
@@ -92,12 +98,12 @@ export default function AdminPanel({ onBack }) {
         <div className="space-y-2 mb-6">
           {loading && <p className="text-sm text-gray-400">Loading...</p>}
           {!loading && users.map((u) => (
-            <div key={u.id} className="flex items-center justify-between px-4 py-3 bg-white border border-gray-100 rounded-xl">
+            <div key={u.id} className="flex items-center justify-between px-4 py-3 dreamy-glass-card rounded-xl border border-white/80">
               <div>
                 <p className="text-sm font-medium text-gray-700">
                   {u.display_name || u.email}
                   {u.role === "admin" && (
-                    <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">Admin</span>
+                    <span className="ml-2 text-[10px] bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded-full">Admin</span>
                   )}
                   {!u.is_active && (
                     <span className="ml-2 text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full">Inactive</span>
@@ -113,7 +119,7 @@ export default function AdminPanel({ onBack }) {
                   className={`text-xs px-3 py-1.5 rounded-lg border transition cursor-pointer ${
                     u.is_active
                       ? "text-red-500 border-red-200 hover:bg-red-50"
-                      : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                      : "text-pink-600 border-pink-200 hover:bg-pink-50"
                   }`}
                 >
                   {u.is_active ? "Deactivate" : "Activate"}
@@ -128,20 +134,21 @@ export default function AdminPanel({ onBack }) {
           <button
             onClick={() => setShowForm(true)}
             disabled={activeNonAdmin >= maxUsers}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm hover:bg-emerald-700 disabled:opacity-40 transition cursor-pointer"
+            className="dreamy-btn-glow flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm disabled:opacity-40 transition cursor-pointer font-medium"
+            style={{ background: "linear-gradient(135deg, #FF9AA2, #E0BBE4)" }}
           >
             <FiUserPlus size={16} />
             Add User
           </button>
         ) : (
-          <form onSubmit={handleInvite} className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+          <form onSubmit={handleInvite} className="dreamy-glass-card rounded-xl p-4 space-y-3 border border-white/80">
             <h3 className="text-sm font-medium text-gray-700">Invite User</h3>
             <input
               type="email"
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               placeholder="Email"
-              className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm outline-none focus:border-emerald-400 transition"
+              className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm outline-none focus:border-pink-400 transition"
               required
             />
             <input
@@ -149,13 +156,13 @@ export default function AdminPanel({ onBack }) {
               value={form.display_name}
               onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
               placeholder="Display name (optional)"
-              className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm outline-none focus:border-emerald-400 transition"
+              className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm outline-none focus:border-pink-400 transition"
             />
             <p className="text-xs text-gray-500">
               The user will receive an invitation email with temporary login credentials.
             </p>
             <div className="flex gap-2">
-              <button type="submit" className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition cursor-pointer">
+              <button type="submit" className="px-4 py-2 rounded-xl bg-pink-600 text-white text-sm hover:bg-pink-700 transition cursor-pointer">
                 Send Invite
               </button>
               <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 transition cursor-pointer">

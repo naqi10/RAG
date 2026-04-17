@@ -53,22 +53,22 @@ export default function UploadPDF({ workspaceId, onUploaded }) {
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         className={`w-full max-w-md border-2 border-dashed rounded-2xl p-10 text-center transition-colors
-          ${dragging ? "border-emerald-400 bg-emerald-50/50" : "border-gray-200 bg-white"}`}
+          ${dragging ? "border-[#FF9AA2] bg-[#FEC8D8]/40" : "border-[#E0BBE4]/50 bg-white/60 backdrop-blur-sm"}`}
       >
         {status === "uploading" ? (
           <>
-            <div className="mx-auto w-10 h-10 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin" />
+            <div className="mx-auto w-10 h-10 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin" />
             <p className="mt-4 text-sm text-gray-500">Uploading & processing...</p>
           </>
         ) : status === "done" ? (
           <>
-            <FiCheckCircle className="mx-auto text-emerald-500" size={40} />
-            <p className="mt-4 text-sm font-medium text-emerald-700">Upload successful!</p>
+            <FiCheckCircle className="mx-auto text-pink-500" size={40} />
+            <p className="mt-4 text-sm font-medium text-pink-700">Upload successful!</p>
             <p className="mt-1 text-xs text-gray-400">
               {info?.chunks_added} chunks indexed from {info?.pages} pages
             </p>
             <button onClick={() => { setStatus("idle"); setInfo(null); setTags(""); }}
-              className="mt-4 text-xs text-emerald-600 hover:underline cursor-pointer">
+              className="mt-4 text-xs text-pink-600 hover:underline cursor-pointer">
               Upload another PDF
             </button>
           </>
@@ -77,7 +77,7 @@ export default function UploadPDF({ workspaceId, onUploaded }) {
             <FiUploadCloud className="mx-auto text-gray-300" size={40} />
             <p className="mt-4 text-sm text-gray-500">
               Drag & drop a PDF or image here, or{" "}
-              <label className="text-emerald-600 font-medium cursor-pointer hover:underline">
+              <label className="text-pink-600 font-medium cursor-pointer hover:underline">
                 browse
                 <input
                   type="file"
@@ -93,7 +93,7 @@ export default function UploadPDF({ workspaceId, onUploaded }) {
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="Tags (e.g. chapter1, notes)"
-                className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200 outline-none focus:border-emerald-400"
+                className="flex-1 text-xs px-3 py-1.5 rounded-lg border border-gray-200 outline-none focus:border-pink-400"
               />
             </div>
             <p className="mt-2 text-[10px] text-gray-300">
